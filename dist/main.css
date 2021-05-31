@@ -1,0 +1,28 @@
+.shellContainer {
+    width: 98vw;
+    height: 78vh;
+    background-color: black;
+    overflow: scroll;
+    position: relative;
+}
+
+.shellClickShield {
+    z-index: 10;
+    display: block;
+    position: absolute;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0);
+}
+
+.shellLine {
+    background-color: black;
+    color: #11ee11;
+    font-family: "Courier New";
+    border: none;
+    outline: none;
+    resize: none;
+    overflow: scroll;
+}
