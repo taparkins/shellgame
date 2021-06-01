@@ -17,4 +17,8 @@ export class Channel {
             isMore: this.queue.length > 0,
         };
     }
+
+    readAll() {
+        return this.read(this.queue.length);
+    }
 }

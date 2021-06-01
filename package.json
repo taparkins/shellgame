@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no testing yet\" && exit 1",
-    "build": "webpack --config webpack.config.js"
+    "build": "./build.sh"
   },
   "author": "",
   "license": "ISC",

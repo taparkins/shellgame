@@ -10,7 +10,7 @@ command
     = assignmentCommand
     / baseCommand
     / ifClause
-    / whereClause
+    / whileClause
 
 ifClause
     = "if" _ "(" cnd:condition ")" _ "{" _ cmds:root _ "}" _ elifBlocks:elifClause* _ elseBlock:elseClause?
@@ -53,8 +53,8 @@ elseClause
             };
         }
 
-whereClause
-    = "where" _ "(" _ cnd:condition _ ")" _ "{" cmds: root _ "}"
+whileClause
+    = "while" _ "(" _ cnd:condition _ ")" _ "{" cmds: root _ "}"
         {
             return {
                 type: 'while',
@@ -64,7 +64,7 @@ whereClause
         }
 
 condition
-    = v:value
+    = c:subCommand
         {
             return {
                 type: 'op',
@@ -72,19 +72,7 @@ condition
                 operands: [{
                     type: 'op',
                     operator: '!',
-                    operands: [ v ],
-                }],
-            };
-        }
-    / b:baseCommand
-        {
-            return {
-                type: 'op',
-                operator '!',
-                operands: [{
-                    type: 'op',
-                    operator: '!',
-                    operands: [ b ],
+                    operands: [ c ],
                 }],
             };
         }
@@ -100,12 +88,35 @@ assignmentCommand
         }
 
 baseCommand
-    = value
-    / head:osIdentifier _ tail:(osIdentifier _)*
+    = head:osIdentifier tail:(__ subCommand)*
         {
+            let cleanedTail = [];
+            for (let i = 0; i < tail.length; i++) {
+                cleanedTail.push(tail[i][1]);
+            }
+
             return {
                 type: 'command',
-                tokens: [ head ].concat(tail),
+                execution: head.join(''),
+                tokens: cleanedTail,
+            };
+        }
+    / simpleCommand
+
+subCommand
+    = simpleCommand
+    / "{" _ inner:baseCommand _ "}"
+        {
+            return inner;
+        }
+
+simpleCommand
+    = value
+    / name:varName
+        {
+            return {
+                type: 'access',
+                variable: name,
             };
         }
 
@@ -115,27 +126,61 @@ value
     / stringValue
 
 numberValue
-    = [0-9]+ { return parseInt(text(), 10); }
+    = [0-9]+ {
+        return {
+            type: 'number',
+            value: parseInt(text(), 10),
+        };
+    }
 
 boolValue
-    = "true" { return true; }
-    / "false" { return false; }
+    = "true" {
+        return {
+            type: 'bool',
+            value: true,
+        };
+    }
+    / "false" {
+        return {
+            type: 'bool',
+            value: false,
+        };
+    }
+
 
 // TODO: handle escape sequences
 stringValue
-    = '"' str:([^"]*) '"' { return str; }
-    / "'" str:([^']*) "'" { return str; }
+    = '"' str:([^ \t\r\n\f']*) '"' {
+        return {
+            type: 'string',
+            value: str.join(''),
+        };
+    }
+    / "'" str:([^ \t\r\n\f"]*) "'" {
+        return {
+            type: 'string',
+            value: str.join(''),
+        };
+    }
+    / str:([^ \t\r\n\f'"]+) {
+        return {
+            type: 'string',
+            value: str.join(''),
+        };
+    }
 
 //========================
 // Simple helper patterns
 //========================
 
-varName = [a-zA-Z0-9_]+
+varName = "$" [a-zA-Z0-9_]+
 
-osIdentifier = [.-_a-zA-Z0-9]+
+osIdentifier = [./-_a-zA-Z0-9]+
 
 commandSeparator
     = _ ";" _
     / "/r"? "/n"
 
-_ = [ \t\r\n\f]*
+ws = [ \t\r\n\f]
+_  = ws*
+__ = ws+
