@@ -19,4 +19,14 @@ export class OS {
             return channel.readAll();
         return channel.read(count);
     }
+
+    registerReader(channelId, callback) {
+        let channel = this.tty.getChannelById(channelId);
+        return channel.registerReader(callback);
+    }
+
+    unregisterReader(channelId, rid) {
+        let channel = this.tty.getChannelById(channelId);
+        channel.unregisterReader(rid);
+    }
 }

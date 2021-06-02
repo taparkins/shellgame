@@ -8,9 +8,9 @@ root
 
 command
     = assignmentCommand
-    / baseCommand
     / ifClause
     / whileClause
+    / baseCommand
 
 ifClause
     = "if" _ "(" cnd:condition ")" _ "{" _ cmds:root _ "}" _ elifBlocks:elifClause* _ elseBlock:elseClause?
@@ -88,7 +88,8 @@ assignmentCommand
         }
 
 baseCommand
-    = head:osIdentifier tail:(__ subCommand)*
+    = arithStatement
+    / head:osIdentifier tail:(__ subCommand)*
         {
             let cleanedTail = [];
             for (let i = 0; i < tail.length; i++) {
@@ -101,17 +102,81 @@ baseCommand
                 tokens: cleanedTail,
             };
         }
-    / simpleCommand
+    / value
 
 subCommand
-    = simpleCommand
-    / "{" _ inner:baseCommand _ "}"
+    = value
+    / "{" _ inner:baseCommand _ "}" { return inner; }
+
+arithStatement = equalityStmt
+
+equalityStmt
+    = head:addStmt tail:(_ ("=="/"!=") _ addStmt)*
         {
-            return inner;
+            return tail.reduce((curTree, element) => {
+                let op = element[1];
+                let subTree = element[3];
+                return {
+                    type: 'op',
+                    operator: op,
+                    operands: [
+                        curTree,
+                        subTree,
+                    ],
+                };
+            }, head);
         }
 
-simpleCommand
-    = value
+addStmt
+    = head:multiplyStmt tail:(_ ("+"/"-") _ multiplyStmt)*
+        {
+            return tail.reduce((curTree, element) => {
+                let op = element[1];
+                let subTree = element[3];
+                return {
+                    type: 'op',
+                    operator: op,
+                    operands: [
+                        curTree,
+                        subTree,
+                    ],
+                };
+            }, head);
+        }
+
+multiplyStmt
+    = head:unaryOp tail:(_ ("*"/"/") _ unaryOp)*
+        {
+            return tail.reduce((curTree, element) => {
+                let op = element[1];
+                let subTree = element[3];
+                return {
+                    type: 'op',
+                    operator: op,
+                    operands: [
+                        curTree,
+                        subTree,
+                    ],
+                };
+            }, head);
+        }
+
+unaryOp
+    = ops:(("!"/"-") _)* val:arithValue
+        {
+            return ops.reduce((curTree, element) => {
+                let op = element[0]
+                return {
+                    type: 'op',
+                    operator: op,
+                    operands: [ curTree ],
+                };
+            }, val);
+        }
+
+arithValue
+    = "(" _ stmt:arithStatement _ ")" { return stmt; }
+    / numberValue
     / name:varName
         {
             return {
@@ -124,6 +189,13 @@ value
     = numberValue
     / boolValue
     / stringValue
+    / name:varName
+        {
+            return {
+                type: 'access',
+                variable: name,
+            };
+        }
 
 numberValue
     = [0-9]+ {
@@ -162,7 +234,7 @@ stringValue
             value: str.join(''),
         };
     }
-    / str:([^ \t\r\n\f'"]+) {
+    / str:osIdentifier {
         return {
             type: 'string',
             value: str.join(''),

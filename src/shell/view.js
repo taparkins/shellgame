@@ -1,3 +1,5 @@
+const NEWLINE_PATTERN = /\r?\n/;
+
 export class ShellWindow {
     constructor(containerElem) {
         this.container = containerElem;
@@ -17,21 +19,25 @@ export class ShellWindow {
         this.addShellLine(false);
     }
 
-    addResponseLine(msg) {
+    addResponse(msg) {
         if (!!this.curLine) {
             this.deactivateShellLine(this.curLine);
             this.curLine = null;
         }
 
-        let newResponseLine = document.createElement("textarea");
-        newResponseLine.classList.add("shellLine");
-        this.deactivateShellLine(newResponseLine);
-        newResponseLine.rows = 1;
-        newResponseLine.cols = 120;
-        newResponseLine.value = msg;
+        let msgLines = msg.split(NEWLINE_PATTERN);
+        for (var i = 0; i < msgLines.length; i++) {
+            let newResponseLine = document.createElement("textarea");
+            newResponseLine.classList.add("shellLine");
+            this.deactivateShellLine(newResponseLine);
+            newResponseLine.rows = 1;
+            newResponseLine.cols = 120;
+            newResponseLine.value = msg;
 
-        this.container.appendChild(document.createElement("br"));
-        this.container.appendChild(newResponseLine);
+            this.container.appendChild(document.createElement("br"));
+            this.container.appendChild(newResponseLine);
+        }
+
     }
 
     addShellLine(includeBr) {
