@@ -7,6 +7,7 @@ export class ShellEngine {
         this.view = view;
         this.view.submitLineCallback = this.handleLine.bind(this);
         this.stdoutRid = this.os.registerReader(0, this.readerCallback.bind(this));
+        this.stderrRid = this.os.registerReader(1, this.readerCallback.bind(this));
     }
 
     handleLine(inLine) {
