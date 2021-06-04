@@ -168,7 +168,7 @@ unaryOp
                 let op = element[0]
                 return {
                     type: 'op',
-                    operator: op,
+                    operator: 'u'+op,
                     operands: [ curTree ],
                 };
             }, val);

@@ -1,7 +1,8 @@
 export class WasmNode {
-    constructor(initValue) {
+    constructor(initValue, returnType) {
         this.value = null;
         this.children = [];
+        this.returnType = returnType;
 
         if (Array.isArray(initValue)) {
             this.children = initValue;
