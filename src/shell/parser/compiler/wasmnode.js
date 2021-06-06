@@ -16,7 +16,7 @@ export class WasmNode {
             return this.value.toString();
         }
 
-        let childStrs = children.map((child) => child.toString());
+        let childStrs = this.children.map((child) => child.toString());
         return '(' + childStrs.join(' ') + ')';
     }
 }

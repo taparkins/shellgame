@@ -1,23 +1,41 @@
 import { ast2wat } from './ast2wat';
 import { CompilationContext } from './context';
-import { buildSyscallImport, syscall2wat } from './syscallimporter';
+import { buildSyscallImport, syscall2wat } from './syscall';
 import { WasmNode } from './wasmnode';
+import { Executable } from '../../../os/processes/executable';
 
-function jit(env, ast) {
+let WabtModule = null;
+require('wabt')().then((wabt) => WabtModule = wabt);
+
+function jit(ast) {
+    while(WabtModule == null);
+
+    // TODO: handle multi-line input
+    if (Array.isArray(ast)) {
+        ast = ast[0];
+    }
+
     let context = new CompilationContext();
     let wat = _buildBaseNode(ast, context);
-
-
+    let wasmModule = WabtModule.parseWat('na.wat', wat.toString());
+    let byteCode = wasmModule.toBinary({}).buffer;
+    return new Executable(byteCode, context.dataRegion);
 }
 
 function _buildBaseNode(ast, context) {
     let innerWat = ast2wat(ast, context);
-    return new WasmNode([
+    let baseNode = new WasmNode([
         new WasmNode('module'),
         _buildMemoryImport(context),
-        buildSyscallImport(context),
-        _buildMainExport(innerWat, context),
     ]);
+
+    if (context.imports.size > 0) {
+        baseNode.children.push(buildSyscallImport(context));
+    }
+
+    baseNode.children.push(_buildMainExport(innerWat, context));
+
+    return baseNode;
 }
 
 function _buildMemoryImport() {
@@ -55,7 +73,7 @@ function _buildMainExport(innerWat, context) {
 
         new WasmNode([
             new WasmNode('export'),
-            new WasmNode('main'),
+            new WasmNode('"main"'),
         ]),
 
         new WasmNode([

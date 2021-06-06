@@ -38,6 +38,7 @@ export class ShellWindow {
             this.container.appendChild(newResponseLine);
         }
 
+        this.addShellLine(true);
     }
 
     addShellLine(includeBr) {
@@ -93,7 +94,6 @@ export class ShellWindow {
             evnt.preventDefault();
             if (this.submitLineCallback && this.curLine)
                 this.submitLineCallback(this.curLine.value);
-            this.addShellLine(true);
         }
     }
 }

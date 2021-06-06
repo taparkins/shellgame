@@ -1,4 +1,5 @@
 import { syscall2wat } from './syscall'
+import { WasmNode } from './wasmnode'
 
 const NODE_TYPES = {
     BOOLEAN: 'bool',
@@ -25,23 +26,23 @@ const OPERATORS = {
 
 function ast2wat(ast, context) {
     switch (ast.type) {
-        NODE_TYES.BOOLEAN:
+        case NODE_TYPES.BOOLEAN:
             return _bool2wat(ast, context);
-        NODE_TYES.COMMAND:
+        case NODE_TYPES.COMMAND:
             return _command2wat(ast, context);
-        NODE_TYES.IF:
+        case NODE_TYPES.IF:
             return _if2wat(ast, context);
-        NODE_TYES.NUMBER:
+        case NODE_TYPES.NUMBER:
             return _number2wat(ast, context);
-        NODE_TYES.OPERATOR:
+        case NODE_TYPES.OPERATOR:
             return _operator2wat(ast, context);
-        NODE_TYES.STRING:
+        case NODE_TYPES.STRING:
             return _string2wat(ast, context);
-        NODE_TYES.VAR_ACCESS:
+        case NODE_TYPES.VAR_ACCESS:
             return _access2wat(ast, context);
-        NODE_TYES.VAR_ASSIGN:
+        case NODE_TYPES.VAR_ASSIGN:
             return _assign2wat(ast, context);
-        NODE_TYES.WHILE:
+        case NODE_TYPES.WHILE:
             return _while2wat(ast, context);
         default:
             throw 'Invalid ast node type: ' + ast.type;
@@ -74,72 +75,72 @@ function _number2wat(ast, context) {
 
 function _operator2wat(ast, context) {
     context.topLevelReturnType = 'i32';
-    switch (ast.op) {
-        case OPERATOR.ADD:
+    switch (ast.operator) {
+        case OPERATORS.ADD:
             return new WasmNode([
                 new WasmNode('i32.add'),
-                ast2wat(ast.operand[0], context),
-                ast2wat(ast.operand[1], context),
+                ast2wat(ast.operands[0], context),
+                ast2wat(ast.operands[1], context),
             ], 'i32');
 
-        case OPERATOR.DIVIDE:
+        case OPERATORS.DIVIDE:
             return new WasmNode([
                 new WasmNode('i32.div_s'),
-                ast2wat(ast.operand[0], context),
-                ast2wat(ast.operand[1], context),
+                ast2wat(ast.operands[0], context),
+                ast2wat(ast.operands[1], context),
             ], 'i32');
 
-        case OPERATOR.EQUAL:
+        case OPERATORS.EQUAL:
             return new WasmNode([
                 new WasmNode('i32.eqz'),
                 new WasmNode([
                     new WasmNode('i32.sub'),
-                    ast2wat(ast.operand[0], context),
-                    ast2wat(ast.operand[1], context),
+                    ast2wat(ast.operands[0], context),
+                    ast2wat(ast.operands[1], context),
                 ], 'i32'),
             ], 'i32');
 
-        case OPERATOR.MULTIPLY:
+        case OPERATORS.MULTIPLY:
             return new WasmNode([
                 new WasmNode('i32.mul'),
-                ast2wat(ast.operand[0], context),
-                ast2wat(ast.operand[1], context),
+                ast2wat(ast.operands[0], context),
+                ast2wat(ast.operands[1], context),
             ], 'i32');
 
-        case OPERATOR.NOT_EQUAL:
+        case OPERATORS.NOT_EQUAL:
             return new WasmNode([
                 new WasmNode('i32.eqz'),
                 new WasmNode([
                     new WasmNode('i32.eqz'),
                     new WasmNode([
                         new WasmNode('i32.sub'),
-                        ast2wat(ast.operand[0], context),
-                        ast2wat(ast.operand[1], context),
+                        ast2wat(ast.operands[0], context),
+                        ast2wat(ast.operands[1], context),
                     ], 'i32'),
                 ], 'i32'),
             ], 'i32');
 
-        case OPERATOR.SUBTRACT:
+        case OPERATORS.SUBTRACT:
             return new WasmNode([
                 new WasmNode('i32.sub'),
-                ast2wat(ast.operand[0], context),
-                ast2wat(ast.operand[1], context),
+                ast2wat(ast.operands[0], context),
+                ast2wat(ast.operands[1], context),
             ], 'i32');
 
-        case OPERATOR.UNARY_NOT:
+        case OPERATORS.UNARY_NOT:
             return new WasmNode([
                 new WasmNode('i32.eqz'),
-                ast2wat(ast.operand[0], context),
+                ast2wat(ast.operands[0], context),
             ], 'i32');
 
-        case OPERATOR.UNARY_NEGATE:
+        case OPERATORS.UNARY_NEGATE:
             return new WasmNode([
                 new WasmNode('i32.mul'),
                 new WasmNode([
                     new WasmNode('i32.const'),
                     new WasmNode('-1'),
                 ], 'i32'),
-                ast2wat(ast.operand[0], context),
+                ast2wat(ast.operands[0], context),
             ], 'i32');
     }
 }

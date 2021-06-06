@@ -22,4 +22,5 @@ function writeStr(memory, buf, str) {
 
 export {
     loadStr,
+    writeStr,
 }

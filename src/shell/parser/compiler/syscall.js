@@ -7,12 +7,12 @@ const SYSCALL_SIGNATURES = {
     setenv: { params: [ 'i32', 'i32' ], result: null },
 }
 
-function buildSyscallImport(syscallNames) {
+function buildSyscallImport(context) {
     return new WasmNode([
         new WasmNode('import'),
         new WasmNode('"os"'),
         new WasmNode('"syscall"'),
-        new WasmNode(syscallNames.map(_buildSyscallSignature));
+        new WasmNode([...context.imports].map(_buildSyscallSignature)),
     ]);
 }
 
@@ -45,14 +45,14 @@ function _buildSyscallSignature(syscallName) {
         children.push(new WasmNode([
             new WasmNode('param'),
             new WasmNode(signature.params[i]),
-        ]);
+        ]));
     }
 
     if (signature.result !== null) {
         children.push(new WasmNode([
             new WasmNode('result'),
             new WasmNode(signature.result),
-        ]);
+        ]));
     }
 
     return new WasmNode(children);

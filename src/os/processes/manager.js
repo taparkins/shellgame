@@ -7,7 +7,7 @@ export class ProcessManager {
     }
 
     exec(executable, args) {
-        let pid = _nextPid();
+        let pid = this._nextPid();
         let process = new Process(this.os, pid, executable, args);
         process.setEndListener((proc) => {
             delete this.runningProcs[proc.pid];
@@ -17,7 +17,7 @@ export class ProcessManager {
     }
 
     _nextPid() {
-        let maxPid = Math.max(...Object.keys(runningProcs));
+        let maxPid = Math.max(...Object.keys(this.runningProcs));
         return maxPid + 1;
     }
 }

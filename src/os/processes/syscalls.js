@@ -46,7 +46,7 @@ function BuildSyscaller(process) {
 
             // TODO: error handling on memory capacity
             return process.os.processManager.exec(executable, args);
-        }
+        },
 
         // Signature: [ i32, *u8, i32 ] -> i32
         // Details:

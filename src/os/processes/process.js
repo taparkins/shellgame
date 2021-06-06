@@ -11,6 +11,8 @@ const PROC_STATES = {
     TERMINATED: 2,
 }
 
+const PAGE_SIZE = 65532;
+
 export class Process {
     constructor(os, pid, executable, args) {
         this.os = os;
@@ -19,8 +21,12 @@ export class Process {
         this.state = PROC_STATES.NOT_STARTED;
 
         this.useableMemoryPtr = this._setupMemory(executable, args);
-        this._buildImportModule();
-        WebAssembly.instantiate(bytecode, importModule).then(this._onInstantiated.bind(this));
+        let importModule = this._buildImportModule();
+
+        WebAssembly.instantiate(
+            executable.byteCode,
+            importModule
+        ).then(this._onInstantiated.bind(this));
     }
 
     setEndListener(callback) {
@@ -33,13 +39,15 @@ export class Process {
     _onInstantiated(module) {
         this.module = module;
         if (module.instance.exports.main === undefined) {
-            end();
+            this.end();
         }
 
         // TODO: background processes?
         this.state = PROC_STATES.RUNNING;
-        module.instance.exports.main(this.useableMemoryPtr, this.argc);
-        end();
+        let result = module.instance.exports.main(this.useableMemoryPtr, this.argc);
+        // TODO: this is just for testing purposes. Ultimately print needs to move into binaries
+        this.os.print(0, result.toString());
+        this.end();
     }
 
     _setupMemory(executable, args) {
