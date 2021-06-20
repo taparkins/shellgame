@@ -62,7 +62,53 @@ function _command2wat(ast, context) {
 }
 
 function _if2wat(ast, context) {
-    throw 'UNIMPLEMENTED EXCEPTION';
+    let cndNode = ast2wat(ast.condition, context);
+
+    let bodyNode = new WasmNode([
+        'then',
+    ]);
+    let bodyReturnType = null;
+    for (var i = 0; i < ast.body.length; i++) {
+        let curLine = ast.body[i];
+        let curLineNode = ast2wat(curLine, context);
+        bodyNode.children.push(curLineNode);
+        bodyReturnType = curLineNode.returnType;
+    }
+
+    let ifSignatureType = new WasmNode(['void']);
+    if (bodyReturnType !== null) {
+        ifSignatureType = new WasmNode([
+            'result',
+            bodyReturnType,
+        ]);
+    }
+
+    let elseNode = new WasmNode(['end']);
+    if (!Array.isArray(ast.elseBlock)) {
+        elseNode = ast2wat(ast.elseBlock, context);
+    } else if (ast.elseBlock.length > 0) {
+        elseNode = new WasmNode([
+            'else',
+        ]);
+        for (var i = 0; i < ast.elseBlock.length; i++) {
+            let curLine = ast.elseBlock[i];
+            let curLineNode = ast2wat(curLine, context);
+            elseNode.children.push(curLineNode);
+        }
+    } else if (bodyReturnType !== null) {
+        elseNode = new WasmNode([
+            'else',
+            new WasmNode(['i32.const', '0']),
+        ]);
+    }
+
+    return new WasmNode([
+        'if',
+        ifSignatureType,
+        cndNode,
+        bodyNode,
+        elseNode,
+    ], bodyReturnType);
 }
 
 function _number2wat(ast, context) {

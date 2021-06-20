@@ -3,6 +3,7 @@ export class CompilationContext {
         this.imports = new Set();
         this.dataRegion = new Uint8Array([ 0, 0, 0, 0, ]); // hardcode 4x 0 bytes to account for null-pointer
         this.dataSegmentPtrs = {};
+        this._maxBranchIdentifier = 0;
     }
 
     addDataItem(identifier, dataSegment) {
@@ -14,5 +15,9 @@ export class CompilationContext {
         this.dataSegmentPtrs[identifier] = newPtr;
         this.dataRegion = new Uint8Array([ ...this.dataRegion, ...this.dataSegment ]);
         return newPtr;
+    }
+
+    allocBranchIdentifier() {
+        return ++this._maxBranchIdentifier;
     }
 }

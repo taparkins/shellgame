@@ -156,20 +156,19 @@ function peg$parse(input, options) {
       peg$c12 = function(cnd, cmds, elifBlocks, elseBlock) {
                   let result = {
                       type: 'if',
-                      branches: [
-                          {
-                              condition: cnd,
-                              body: cmds,
-                          }
-                      ],
+                      condition: cnd,
+                      body: cmds,
+                      elseBlock: [],
                   };
                   
+                  let curIf = result;
                   for (var i = 0; i < elifBlocks.length; i++) {
-                      result.branches.push(elifs[i]);
+                      curIf.elseBlock = [ elifBlocks[i] ];
+                      curIf = elifBlocks[i];
                   }
 
                   if (!!elseBlock)
-                      result.branches.push(elseBlock);
+                      curIf.elseBlock = elseBlock;
 
                   return result;
               },
@@ -177,17 +176,16 @@ function peg$parse(input, options) {
       peg$c14 = peg$literalExpectation("else if", false),
       peg$c15 = function(cnd, cmds) {
                   return {
+                      type: 'if',
                       condition: cnd,
                       body: cmds,
+                      elseBlock: [],
                   };
               },
       peg$c16 = "else",
       peg$c17 = peg$literalExpectation("else", false),
       peg$c18 = function(cmds) {
-                  return {
-                      condition: 'true',
-                      body: cmds,
-                  };
+                  return cmds;
               },
       peg$c19 = "while",
       peg$c20 = peg$literalExpectation("while", false),
@@ -201,10 +199,10 @@ function peg$parse(input, options) {
       peg$c22 = function(c) {
                   return {
                       type: 'op',
-                      operator: '!',
+                      operator: 'u!',
                       operands: [{
                           type: 'op',
-                          operator: '!',
+                          operator: 'u!',
                           operands: [ c ],
                       }],
                   };

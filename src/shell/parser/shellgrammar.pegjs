@@ -17,20 +17,19 @@ ifClause
         {
             let result = {
                 type: 'if',
-                branches: [
-                    {
-                        condition: cnd,
-                        body: cmds,
-                    }
-                ],
+                condition: cnd,
+                body: cmds,
+                elseBlock: [],
             };
             
+            let curIf = result;
             for (var i = 0; i < elifBlocks.length; i++) {
-                result.branches.push(elifs[i]);
+                curIf.elseBlock = [ elifBlocks[i] ];
+                curIf = elifBlocks[i];
             }
 
             if (!!elseBlock)
-                result.branches.push(elseBlock);
+                curIf.elseBlock = elseBlock;
 
             return result;
         }
@@ -39,18 +38,17 @@ elifClause
     = "else if" _ "(" cnd:condition ")" _ "{" _ cmds:root _ "}"
         {
             return {
+                type: 'if',
                 condition: cnd,
                 body: cmds,
+                elseBlock: [],
             };
         }
 
 elseClause
     = "else" _ "{" _ cmds:root _ "}"
         {
-            return {
-                condition: 'true',
-                body: cmds,
-            };
+            return cmds;
         }
 
 whileClause
@@ -68,10 +66,10 @@ condition
         {
             return {
                 type: 'op',
-                operator: '!',
+                operator: 'u!',
                 operands: [{
                     type: 'op',
-                    operator: '!',
+                    operator: 'u!',
                     operands: [ c ],
                 }],
             };
