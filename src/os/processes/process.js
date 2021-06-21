@@ -23,10 +23,15 @@ export class Process {
         this.useableMemoryPtr = this._setupMemory(executable, args);
         let importModule = this._buildImportModule();
 
-        WebAssembly.instantiate(
+        this.modulePromise = WebAssembly.instantiate(
             executable.byteCode,
             importModule
-        ).then(this._onInstantiated.bind(this));
+        );
+    }
+
+    start() {
+        this.modulePromise = this.modulePromise
+            .then(this._onInstantiated.bind(this));
     }
 
     setEndListener(callback) {
@@ -91,18 +96,15 @@ export class Process {
     }
 
     _buildImportModule() {
-        let module = {
+        return {
+            globals: {
+                pid: this.pid,
+            },
             os: {
                 process_space: this.memory,
-            }
+            },
+            syscalls: this.os.syscaller.exportModule,
         };
-
-        let syscalls = BuildSyscaller(this);
-        for (let syscallName in syscalls) {
-            module.os[syscallName] = syscalls[syscallName];
-        }
-
-        return module;
     }
 
     end() {

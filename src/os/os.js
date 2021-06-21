@@ -1,5 +1,6 @@
 import { TTY } from './tty/tty';
 import { ProcessManager } from './processes/manager';
+import { Syscaller } from './processes/syscalls';
 import { OsEnvironment } from './processes/env';
 
 export class OS {
@@ -8,6 +9,7 @@ export class OS {
         this.tty.addChannel(0, 'stdout');
         this.tty.addChannel(1, 'stderr');
 
+        this.syscaller = new Syscaller(this);
         this.processManager = new ProcessManager(this);
 
         this.environment = new OsEnvironment(this);
@@ -24,6 +26,10 @@ export class OS {
         if (count == null)
             return channel.readAll();
         return channel.read(count);
+    }
+
+    getProcByPID(pid) {
+        return this.processManager.runningProcs[pid];
     }
 
     registerReader(channelId, callback) {

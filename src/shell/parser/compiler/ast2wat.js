@@ -5,6 +5,7 @@ const NODE_TYPES = {
     BOOLEAN: 'bool',
     COMMAND: 'command',
     IF: 'if',
+    GLOBAL_GET: 'global_get',
     NUMBER: 'number',
     OPERATOR: 'op',
     STRING: 'string',
@@ -32,6 +33,8 @@ function ast2wat(ast, context) {
             return _command2wat(ast, context);
         case NODE_TYPES.IF:
             return _if2wat(ast, context);
+        case NODE_TYPES.GLOBAL_GET:
+            return _globalGet2wat(ast, context);
         case NODE_TYPES.NUMBER:
             return _number2wat(ast, context);
         case NODE_TYPES.OPERATOR:
@@ -109,6 +112,11 @@ function _if2wat(ast, context) {
         bodyNode,
         elseNode,
     ], bodyReturnType);
+}
+
+function _globalGet2wat(ast, context) {
+    context.importGlobals.add(ast.name);
+    return new WasmNode(['global.get', '$' + ast.name]);
 }
 
 function _number2wat(ast, context) {
@@ -214,7 +222,8 @@ function _access2wat(ast, context) {
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
     return syscall2wat('getenv', [
-        { type: 'number', value: varNamePtr },
+        { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
+        { type: NODE_TYPES.NUMBER, value: varNamePtr },
     ], context);
 }
 
@@ -226,7 +235,8 @@ function _assign2wat(ast, context) {
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
     return syscall2wat('setenv', [
-        { type: 'number', value: varNamePtr },
+        { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
+        { type: NODE_TYPES.NUMBER, value: varNamePtr },
         ast.value,
     ], context);
 }
