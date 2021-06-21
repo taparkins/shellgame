@@ -193,7 +193,12 @@ function _operator2wat(ast, context) {
 
 function _string2wat(ast, context) {
     // TODO: how do I handle strings as values???
-    let strPtr = context.addDataItem(ast.value);
+    let encoder = new TextEncoder();
+    let dataSegment = new Uint8Array([
+        ...encoder.encode(ast.value),
+        0, // null terminate the string
+    ]);
+    let strPtr = context.addDataItem(dataSegment);
     return new WasmNode([
         new WasmNode('i32.const'),
         new WasmNode(strPtr.toString()),
@@ -202,22 +207,66 @@ function _string2wat(ast, context) {
 
 function _access2wat(ast, context) {
     // TODO: how do I handle strings as values???
-    let varNamePtr = context.addDataItem(ast.variable);
-    return _syscall2wat('getenv', [
+    let encoder = new TextEncoder();
+    let dataSegment = new Uint8Array([
+        ...encoder.encode(ast.variable),
+        0, // null terminate the string
+    ]);
+    let varNamePtr = context.addDataItem(dataSegment);
+    return syscall2wat('getenv', [
         { type: 'number', value: varNamePtr },
     ], context);
 }
 
 function _assign2wat(ast, context) {
-    let varNamePtr = context.addDataItem(ast.variable);
-    return _syscall2wat('setenv', [
+    let encoder = new TextEncoder();
+    let dataSegment = new Uint8Array([
+        ...encoder.encode(ast.variable),
+        0, // null terminate the string
+    ]);
+    let varNamePtr = context.addDataItem(dataSegment);
+    return syscall2wat('setenv', [
         { type: 'number', value: varNamePtr },
         ast.value,
     ], context);
 }
 
 function _while2wat(ast, context) {
-    throw 'UNIMPLEMENTED EXCEPTION';
+    let loopId = context.allocBranchIdentifier();
+
+    let resultNode = new WasmNode([
+        'loop',
+        '$l' + loopId.toString(),
+    ]);
+
+    let bodyNodes = [];
+    for (var i = 0; i < ast.body.length; i++) {
+        let curLine = ast.body[i];
+        let curLineNode = ast2wat(curLine, context);
+
+        resultNode.returnType = curLineNode.returnType;
+        bodyNodes.push(curLineNode);
+    }
+
+    if (resultNode.returnType !== undefined) {
+        resultNode.children.push(new WasmNode([
+            'result',
+            resultNode.returnType,
+        ]));
+    }
+
+    resultNode.children = resultNode.children.concat(bodyNodes);
+
+    let cndNode = ast2wat(ast.condition, context);
+    resultNode.children.push(new WasmNode([
+        'br_if',
+        '$l' + loopId.toString(),
+        cndNode,
+    ]));
+
+    context.deallocBranchIdentifier();
+
+    return resultNode;
 }
 
 export {

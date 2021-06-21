@@ -81,7 +81,7 @@ function BuildSyscaller(process) {
 
             // TODO: I need a malloc to do this properly.
             let saveBuf = 0x00;
-            writeStr(saveBuf, value);
+            writeStr(process.memory, saveBuf, value);
             return saveBuf;
         },
 

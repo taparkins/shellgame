@@ -76,7 +76,7 @@ condition
         }
 
 assignmentCommand
-    = "$" name:varName _ "=" _ cmd:baseCommand
+    = name:varName _ "=" _ cmd:baseCommand
         {
             return {
                 type: 'assign',

@@ -1,4 +1,5 @@
 import { WasmNode } from './wasmnode';
+import { ast2wat } from './ast2wat';
 
 const SYSCALL_SIGNATURES = {
     fork:   { params: [ 'i32', 'i32', 'i32' ], result: 'i32' },
@@ -7,13 +8,16 @@ const SYSCALL_SIGNATURES = {
     setenv: { params: [ 'i32', 'i32' ], result: null },
 }
 
-function buildSyscallImport(context) {
-    return new WasmNode([
-        new WasmNode('import'),
-        new WasmNode('"os"'),
-        new WasmNode('"syscall"'),
-        new WasmNode([...context.imports].map(_buildSyscallSignature)),
-    ]);
+function buildSyscallImports(context) {
+    return [...context.imports]
+        .map((syscallName) => {
+            return new WasmNode([
+                'import',
+                '"os"',
+                '"' + syscallName + '"',
+                _buildSyscallSignature(syscallName),
+            ]);
+        });
 }
 
 function syscall2wat(syscallName, args, context) {
@@ -21,10 +25,11 @@ function syscall2wat(syscallName, args, context) {
         throw '(syscall2wat) Invalid syscall name: ' + syscallName;
     }
 
-    context.imports.add(syscall);
+    context.imports.add(syscallName);
     let resultType = SYSCALL_SIGNATURES[syscallName].result;
     return new WasmNode([
         new WasmNode('call'),
+        new WasmNode('$' + syscallName),
         ...args.map((arg) => ast2wat(arg, context)),
     ], resultType);
 }
@@ -59,6 +64,6 @@ function _buildSyscallSignature(syscallName) {
 }
 
 export {
-    buildSyscallImport,
+    buildSyscallImports,
     syscall2wat,
 }

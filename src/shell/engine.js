@@ -23,7 +23,7 @@ export class ShellEngine {
             this.interpreter.executeLine(inLine);
         } catch (e) {
             console.log(e);
-            this.os.print(1, e);
+            this.os.print(1, e.message);
             return;
         }
     }

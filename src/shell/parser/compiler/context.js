@@ -6,18 +6,22 @@ export class CompilationContext {
         this._maxBranchIdentifier = 0;
     }
 
-    addDataItem(identifier, dataSegment) {
-        if (this.dataSegmentPtrs[identifier] !== undefined) {
-            return this.dataSegmentPtrs[identifier];
+    addDataItem(dataSegment) {
+        if (this.dataSegmentPtrs[dataSegment] !== undefined) {
+            return this.dataSegmentPtrs[dataSegment];
         }
 
         let newPtr = this.dataRegion.length;
-        this.dataSegmentPtrs[identifier] = newPtr;
-        this.dataRegion = new Uint8Array([ ...this.dataRegion, ...this.dataSegment ]);
+        this.dataSegmentPtrs[dataSegment] = newPtr;
+        this.dataRegion = new Uint8Array([ ...this.dataRegion, ...dataSegment ]);
         return newPtr;
     }
 
     allocBranchIdentifier() {
         return ++this._maxBranchIdentifier;
+    }
+
+    deallocBranchIdentifier() {
+        --this._maxBranchIdentifier;
     }
 }

@@ -1,6 +1,6 @@
 import { ast2wat } from './ast2wat';
 import { CompilationContext } from './context';
-import { buildSyscallImport, syscall2wat } from './syscall';
+import { buildSyscallImports, syscall2wat } from './syscall';
 import { WasmNode } from './wasmnode';
 import { Executable } from '../../../os/processes/executable';
 
@@ -30,7 +30,7 @@ function _buildBaseNode(ast, context) {
     ]);
 
     if (context.imports.size > 0) {
-        baseNode.children.push(buildSyscallImport(context));
+        baseNode.children.push(buildSyscallImports(context));
     }
 
     baseNode.children.push(_buildMainExport(innerWat, context));
@@ -52,7 +52,7 @@ function _buildMemoryImport() {
 
 function _buildMainExport(innerWat, context) {
     let body = [ innerWat ];
-    if (innerWat.returnType === undefined) {
+    if (innerWat.returnType === undefined || innerWat.returnType === null) {
         body.push(new WasmNode([
             new WasmNode('i32.const'),
             new WasmNode('0'),
