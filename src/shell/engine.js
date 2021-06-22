@@ -20,7 +20,7 @@ export class ShellEngine {
             this.os.processManager.exec(executable, []);
         } catch (e) {
             console.log(e);
-            this.os.print(1, e.message);
+            this.os.print(1, e.message || e);
             return;
         }
     }
