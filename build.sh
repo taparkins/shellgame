@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
 
-pegjs -o ./src/shell/parser/shellgrammar.js ./src/shell/parser/shellgrammar.pegjs
+pegjs -o ./src/lang/parser/grammar.js ./src/lang/parser/grammar.pegjs
 webpack --config webpack.config.js

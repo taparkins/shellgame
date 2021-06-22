@@ -1,6 +1,6 @@
 import { WasmNode } from './wasmnode'
-import { buildSyscallSignature } from './syscall'
-import { buildGlobalType } from './globals'
+import { buildSyscallSignature } from './ast2wat/syscall'
+import { buildGlobalType } from './ast2wat/globals'
 
 export class CompilationContext {
     constructor() {
@@ -22,7 +22,20 @@ export class CompilationContext {
         return newPtr;
     }
 
-    getGlobalsImportNode() {
+    getMemoryImportNode() {
+        // TODO: resize memory if needed for data region (?)
+        return new WasmNode([
+            new WasmNode('memory'),
+            new WasmNode([
+                new WasmNode('import'),
+                new WasmNode('"os"'),
+                new WasmNode('"process_space"'),
+            ]),
+            new WasmNode(1),
+        ]);
+    }
+
+    getGlobalsImportNodes() {
         return [...this.importGlobals]
             .map((globalName) => {
                 return new WasmNode([
@@ -38,7 +51,7 @@ export class CompilationContext {
             });
     }
 
-    getFuncsImportNode() {
+    getFuncsImportNodes() {
         return [...this.importFuncs]
             .map((syscallName) => {
                 return new WasmNode([

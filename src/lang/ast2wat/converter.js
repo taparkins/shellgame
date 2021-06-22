@@ -1,5 +1,5 @@
-import { syscall2wat } from './syscall'
-import { WasmNode } from './wasmnode'
+import { WasmNode } from '../wasmnode'
+import { convertSyscall } from './syscall'
 
 const NODE_TYPES = {
     BOOLEAN: 'bool',
@@ -25,34 +25,34 @@ const OPERATORS = {
     UNARY_NEGATE: 'u-'
 }
 
-function ast2wat(ast, context) {
+function convertNode(ast, context) {
     switch (ast.type) {
         case NODE_TYPES.BOOLEAN:
-            return _bool2wat(ast, context);
+            return _convertBool(ast, context);
         case NODE_TYPES.COMMAND:
-            return _command2wat(ast, context);
+            return _convertCommand(ast, context);
         case NODE_TYPES.IF:
-            return _if2wat(ast, context);
+            return _convertIf(ast, context);
         case NODE_TYPES.GLOBAL_GET:
-            return _globalGet2wat(ast, context);
+            return _convertGlobalGet(ast, context);
         case NODE_TYPES.NUMBER:
-            return _number2wat(ast, context);
+            return _convertNumber(ast, context);
         case NODE_TYPES.OPERATOR:
-            return _operator2wat(ast, context);
+            return _convertOperator(ast, context);
         case NODE_TYPES.STRING:
-            return _string2wat(ast, context);
+            return _convertString(ast, context);
         case NODE_TYPES.VAR_ACCESS:
-            return _access2wat(ast, context);
+            return _convertVarAccess(ast, context);
         case NODE_TYPES.VAR_ASSIGN:
-            return _assign2wat(ast, context);
+            return _convertVarAssign(ast, context);
         case NODE_TYPES.WHILE:
-            return _while2wat(ast, context);
+            return _convertWhile(ast, context);
         default:
             throw 'Invalid ast node type: ' + ast.type;
     }
 }
 
-function _bool2wat(ast, context) {
+function _convertBool(ast, context) {
     context.topLevelReturnType = 'i32';
     return new WasmNode([
         new WasmNode('i32.const'),
@@ -60,12 +60,12 @@ function _bool2wat(ast, context) {
     ], 'i32');
 }
 
-function _command2wat(ast, context) {
+function _convertCommand(ast, context) {
     throw 'UNIMPLEMENTED EXCEPTION';
 }
 
-function _if2wat(ast, context) {
-    let cndNode = ast2wat(ast.condition, context);
+function _convertIf(ast, context) {
+    let cndNode = convertNode(ast.condition, context);
 
     let bodyNode = new WasmNode([
         'then',
@@ -73,7 +73,7 @@ function _if2wat(ast, context) {
     let bodyReturnType = null;
     for (var i = 0; i < ast.body.length; i++) {
         let curLine = ast.body[i];
-        let curLineNode = ast2wat(curLine, context);
+        let curLineNode = convertNode(curLine, context);
         bodyNode.children.push(curLineNode);
         bodyReturnType = curLineNode.returnType;
     }
@@ -88,14 +88,14 @@ function _if2wat(ast, context) {
 
     let elseNode = new WasmNode(['end']);
     if (!Array.isArray(ast.elseBlock)) {
-        elseNode = ast2wat(ast.elseBlock, context);
+        elseNode = convertNode(ast.elseBlock, context);
     } else if (ast.elseBlock.length > 0) {
         elseNode = new WasmNode([
             'else',
         ]);
         for (var i = 0; i < ast.elseBlock.length; i++) {
             let curLine = ast.elseBlock[i];
-            let curLineNode = ast2wat(curLine, context);
+            let curLineNode = convertNode(curLine, context);
             elseNode.children.push(curLineNode);
         }
     } else if (bodyReturnType !== null) {
@@ -114,12 +114,12 @@ function _if2wat(ast, context) {
     ], bodyReturnType);
 }
 
-function _globalGet2wat(ast, context) {
+function _convertGlobalGet(ast, context) {
     context.importGlobals.add(ast.name);
     return new WasmNode(['global.get', '$' + ast.name]);
 }
 
-function _number2wat(ast, context) {
+function _convertNumber(ast, context) {
     context.topLevelReturnType = 'i32';
     return new WasmNode([
         new WasmNode('i32.const'),
@@ -127,21 +127,21 @@ function _number2wat(ast, context) {
     ], 'i32');
 }
 
-function _operator2wat(ast, context) {
+function _convertOperator(ast, context) {
     context.topLevelReturnType = 'i32';
     switch (ast.operator) {
         case OPERATORS.ADD:
             return new WasmNode([
                 new WasmNode('i32.add'),
-                ast2wat(ast.operands[0], context),
-                ast2wat(ast.operands[1], context),
+                convertNode(ast.operands[0], context),
+                convertNode(ast.operands[1], context),
             ], 'i32');
 
         case OPERATORS.DIVIDE:
             return new WasmNode([
                 new WasmNode('i32.div_s'),
-                ast2wat(ast.operands[0], context),
-                ast2wat(ast.operands[1], context),
+                convertNode(ast.operands[0], context),
+                convertNode(ast.operands[1], context),
             ], 'i32');
 
         case OPERATORS.EQUAL:
@@ -149,16 +149,16 @@ function _operator2wat(ast, context) {
                 new WasmNode('i32.eqz'),
                 new WasmNode([
                     new WasmNode('i32.sub'),
-                    ast2wat(ast.operands[0], context),
-                    ast2wat(ast.operands[1], context),
+                    convertNode(ast.operands[0], context),
+                    convertNode(ast.operands[1], context),
                 ], 'i32'),
             ], 'i32');
 
         case OPERATORS.MULTIPLY:
             return new WasmNode([
                 new WasmNode('i32.mul'),
-                ast2wat(ast.operands[0], context),
-                ast2wat(ast.operands[1], context),
+                convertNode(ast.operands[0], context),
+                convertNode(ast.operands[1], context),
             ], 'i32');
 
         case OPERATORS.NOT_EQUAL:
@@ -168,8 +168,8 @@ function _operator2wat(ast, context) {
                     new WasmNode('i32.eqz'),
                     new WasmNode([
                         new WasmNode('i32.sub'),
-                        ast2wat(ast.operands[0], context),
-                        ast2wat(ast.operands[1], context),
+                        convertNode(ast.operands[0], context),
+                        convertNode(ast.operands[1], context),
                     ], 'i32'),
                 ], 'i32'),
             ], 'i32');
@@ -177,14 +177,14 @@ function _operator2wat(ast, context) {
         case OPERATORS.SUBTRACT:
             return new WasmNode([
                 new WasmNode('i32.sub'),
-                ast2wat(ast.operands[0], context),
-                ast2wat(ast.operands[1], context),
+                convertNode(ast.operands[0], context),
+                convertNode(ast.operands[1], context),
             ], 'i32');
 
         case OPERATORS.UNARY_NOT:
             return new WasmNode([
                 new WasmNode('i32.eqz'),
-                ast2wat(ast.operands[0], context),
+                convertNode(ast.operands[0], context),
             ], 'i32');
 
         case OPERATORS.UNARY_NEGATE:
@@ -194,12 +194,12 @@ function _operator2wat(ast, context) {
                     new WasmNode('i32.const'),
                     new WasmNode('-1'),
                 ], 'i32'),
-                ast2wat(ast.operands[0], context),
+                convertNode(ast.operands[0], context),
             ], 'i32');
     }
 }
 
-function _string2wat(ast, context) {
+function _convertString(ast, context) {
     // TODO: how do I handle strings as values???
     let encoder = new TextEncoder();
     let dataSegment = new Uint8Array([
@@ -213,7 +213,7 @@ function _string2wat(ast, context) {
     ], '*u8');
 }
 
-function _access2wat(ast, context) {
+function _convertVarAccess(ast, context) {
     // TODO: how do I handle strings as values???
     let encoder = new TextEncoder();
     let dataSegment = new Uint8Array([
@@ -221,27 +221,27 @@ function _access2wat(ast, context) {
         0, // null terminate the string
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
-    return syscall2wat('getenv', [
+    return convertSyscall('getenv', [
         { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
         { type: NODE_TYPES.NUMBER, value: varNamePtr },
     ], context);
 }
 
-function _assign2wat(ast, context) {
+function _convertVarAssign(ast, context) {
     let encoder = new TextEncoder();
     let dataSegment = new Uint8Array([
         ...encoder.encode(ast.variable),
         0, // null terminate the string
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
-    return syscall2wat('setenv', [
+    return convertSyscall('setenv', [
         { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
         { type: NODE_TYPES.NUMBER, value: varNamePtr },
         ast.value,
     ], context);
 }
 
-function _while2wat(ast, context) {
+function _convertWhile(ast, context) {
     let loopId = context.allocBranchIdentifier();
 
     let resultNode = new WasmNode([
@@ -252,7 +252,7 @@ function _while2wat(ast, context) {
     let bodyNodes = [];
     for (var i = 0; i < ast.body.length; i++) {
         let curLine = ast.body[i];
-        let curLineNode = ast2wat(curLine, context);
+        let curLineNode = convertNode(curLine, context);
 
         resultNode.returnType = curLineNode.returnType;
         bodyNodes.push(curLineNode);
@@ -267,7 +267,7 @@ function _while2wat(ast, context) {
 
     resultNode.children = resultNode.children.concat(bodyNodes);
 
-    let cndNode = ast2wat(ast.condition, context);
+    let cndNode = convertNode(ast.condition, context);
     resultNode.children.push(new WasmNode([
         'br_if',
         '$l' + loopId.toString(),
@@ -280,5 +280,5 @@ function _while2wat(ast, context) {
 }
 
 export {
-    ast2wat,
+    convertNode,
 }

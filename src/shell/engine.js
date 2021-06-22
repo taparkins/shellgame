@@ -1,6 +1,4 @@
-import { Interpreter } from './parser/interpreter';
-import { parse } from './parser/shellgrammar';
-
+import { compile } from '../lang/compiler';
 
 export class ShellEngine {
     constructor(os, view) {
@@ -9,8 +7,6 @@ export class ShellEngine {
         this.view.submitLineCallback = this.handleLine.bind(this);
         this.stdoutRid = this.os.registerReader(0, this.readerCallback.bind(this));
         this.stderrRid = this.os.registerReader(1, this.readerCallback.bind(this));
-
-        this.interpreter = new Interpreter(this.os);
     }
 
     handleLine(inLine) {
@@ -20,7 +16,8 @@ export class ShellEngine {
         }
 
         try {
-            this.interpreter.executeLine(inLine);
+            let executable = compile(inLine);
+            this.os.processManager.exec(executable, []);
         } catch (e) {
             console.log(e);
             this.os.print(1, e.message);
