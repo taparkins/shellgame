@@ -6,8 +6,9 @@ function ast2wat(astLines, context) {
     return new WasmNode([
         new WasmNode('module'),
         context.getMemoryImportNode(),
-        ...context.getGlobalsImportNodes(),
-        ...context.getFuncsImportNodes(),
+        ...context.getGlobalImportNodes(),
+        ...context.getSyscallImportNodes(),
+        ...context.getCorelibImportNodes(),
         mainNode,
     ]);
 }
@@ -29,19 +30,15 @@ function _buildMain(astLines, context) {
     }
 
     if (returnType === undefined || returnType === null) {
-        body.push(new WasmNode([
-            new WasmNode('i32.const'),
-            new WasmNode('0'),
-        ], 'i32'));
+        body.push(new WasmNode([ 'i32.const', '0' ], 'i32'));
     } else if (returnType === '*u8') {
-        // TODO: handle string output
+        context.addCorelibDependency('print');
+        body.push(new WasmNode([ 'call', '$print' ]));
+        body.push(new WasmNode([ 'i32.const', '0' ], 'i32'));
     } else if (returnType !== 'i32') {
         // Unknown return type -- just clear it and return zero
-        body.push(new WasmNode(['drop']));
-        body.push(new WasmNode([
-            new WasmNode('i32.const'),
-            new WasmNode('0'),
-        ], 'i32'));
+        body.push(new WasmNode([ 'drop' ]));
+        body.push(new WasmNode([ 'i32.const', '0' ], 'i32'));
     }
 
     return new WasmNode([

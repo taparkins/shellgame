@@ -1,3 +1,5 @@
+import { TYPE_MAPPINGS } from './types'
+
 const GLOBAL_TYPES = {
     pid: { type: 'i32', mutable: false },
 };
@@ -14,7 +16,7 @@ function buildGlobalType(globalName) {
 
     return new WasmNode([
         'mut',
-        typeSignature.type,
+        TYPE_MAPPINGS[typeSignature.type],
     ]);
 }
 

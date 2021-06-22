@@ -1,5 +1,6 @@
 import { WasmNode } from '../wasmnode'
 import { convertSyscall } from './syscall'
+import { TYPE_MAPPINGS } from './types'
 
 const NODE_TYPES = {
     BOOLEAN: 'bool',
@@ -57,7 +58,7 @@ function _convertBool(ast, context) {
     return new WasmNode([
         new WasmNode('i32.const'),
         new WasmNode(ast.value ? '1' : '0'),
-    ], 'i32');
+    ], 'bool');
 }
 
 function _convertCommand(ast, context) {
@@ -82,7 +83,7 @@ function _convertIf(ast, context) {
     if (bodyReturnType !== null) {
         ifSignatureType = new WasmNode([
             'result',
-            bodyReturnType,
+            TYPE_MAPPINGS[bodyReturnType],
         ]);
     }
 
@@ -115,7 +116,7 @@ function _convertIf(ast, context) {
 }
 
 function _convertGlobalGet(ast, context) {
-    context.importGlobals.add(ast.name);
+    context.addGlobalDependency(ast.name);
     return new WasmNode(['global.get', '$' + ast.name]);
 }
 
@@ -261,7 +262,7 @@ function _convertWhile(ast, context) {
     if (resultNode.returnType !== undefined) {
         resultNode.children.push(new WasmNode([
             'result',
-            resultNode.returnType,
+            TYPE_MAPPINGS[resultNode.returnType],
         ]));
     }
 

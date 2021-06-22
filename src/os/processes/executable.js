@@ -32,3 +32,7 @@ export class Executable {
         this.argRegionOffset = this.dataRegionOffset + dataRegion.byteLength;
     }
 }
+
+export {
+    REGION_1_START,
+}

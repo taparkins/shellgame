@@ -5,7 +5,8 @@ function loadStr(memory, ptr) {
     for (; memBuf[endPtr] != 0; endPtr++) { }
 
     let strBytes = memBuf.slice(ptr, endPtr);
-    return String.fromCharCode(strBytes);
+    let decoder = new TextDecoder();
+    return decoder.decode(strBytes);
 }
 
 // TODO: this is not memory safe -- it could overwrite existing memory.

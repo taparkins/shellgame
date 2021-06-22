@@ -243,7 +243,9 @@ stringValue
 // Simple helper patterns
 //========================
 
-varName = "$" [a-zA-Z0-9_]+
+varName = "$" name:([a-zA-Z0-9_]+) {
+        return name.join('');
+    }
 
 osIdentifier = [./-_a-zA-Z0-9]+
 
