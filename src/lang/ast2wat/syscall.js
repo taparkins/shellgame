@@ -5,6 +5,8 @@ import { TYPE_MAPPINGS } from './types'
 const SYSCALL_SIGNATURES = {
     fork:   { params: [ 'i32', '*u8', '*u8', 'i32' ], result: 'i32' },
     write:  { params: [ 'i32', 'i32', '*u8', 'i32' ], result: 'i32' },
+    malloc: { params: [ 'i32', 'i32' ], result: '*u8' },
+    free:   { params: [ 'i32', '*u8' ], result: null },
     getenv: { params: [ 'i32', '*u8' ], result: '*u8' },
     setenv: { params: [ 'i32', '*u8', '*u8' ], result: null },
 }

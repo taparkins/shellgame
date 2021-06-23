@@ -6,6 +6,8 @@ export class Syscaller {
         this.exportModule = {
             fork:   this.fork.bind(this),
             write:  this.write.bind(this),
+            malloc: this.malloc.bind(this),
+            free:   this.free.bind(this),
             getenv: this.getenv.bind(this),
             setenv: this.setenv.bind(this),
         };
@@ -66,10 +68,37 @@ export class Syscaller {
     //     On failure: negative number (see "error codes" for meaning)
     write(pid, channelCode, byteAddr, byteLen) {
         let process = this.os.getProcByPID(pid);
-        let strBuffer = process.memory.buffer.slice(byteAddr, byteAddr + byteLen);
-        let msg = String.fromCharCode(new Uint8Array(strBuffer));
+        let strBuffer = process.memory.wasmMemory.buffer.slice(byteAddr, byteAddr + byteLen);
+
+        let decoder = new TextDecoder();
+        let msg = decoder.decode(new Uint8Array(strBuffer));
+        // TODO: don't convert this to a string, just write a byte array to the channel
         process.os.print(channelCode, msg);
         return msg.length;
+    }
+
+    // Signature: [ i32, i32 ] -> *u8
+    // Details:
+    //   Requests an allocation of memory for the specified process, of the specified size.
+    //   Arg 0:  process ID
+    //   Arg 1:  number of bytes to allocate into the region
+    //   Return: pointer to allocated memory
+    //     On failure: exception is thrown
+    malloc(pid, byteLen) {
+        let process = this.os.getProcByPID(pid);
+        return process.memory.alloc(byteLen);
+    }
+
+    // Signature: [ i32, *u8 ] -> ()
+    // Details:
+    //   Frees an allocation of memory for the specified process.
+    //   Arg 0: process ID
+    //   Arg 1: pointer to region of memory to be freed
+    //   Return: VOID
+    //     On failure: exception is thrown
+    free(pid, ptr) {
+        let process = this.os.getProcByPID(pid);
+        return process.memory.free(ptr);
     }
 
     // Signature: [ i32, *u8 ] -> *u8

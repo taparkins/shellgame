@@ -1,5 +1,5 @@
 function loadStr(memory, ptr) {
-    let memBuf = new Uint8Array(memory.buffer);
+    let memBuf = new Uint8Array(memory.wasmMemory.buffer);
 
     let endPtr = ptr;
     for (; memBuf[endPtr] != 0; endPtr++) { }
@@ -9,17 +9,10 @@ function loadStr(memory, ptr) {
     return decoder.decode(strBytes);
 }
 
-// TODO: this is not memory safe -- it could overwrite existing memory.
-// Malloc??
 function writeStr(memory, buf, str) {
-    let endPtr = buf + str.len + 1; // +1 to \0 terminate
-    let memBuf = new Uint8Array(memory.buffer.slice(buf, endPtr));
-
     let encoder = new TextEncoder();
-    let bytes  = encoder.encode(str);
-    for (var j = 0; j < buf-endPtr; j++) {
-        memBuf[j+buf] = bytes[j];
-    }
+    let bytes  = encoder.encode(str + '\0');
+    memory.memcopy_safe(bytes, buf);
 }
 
 export {

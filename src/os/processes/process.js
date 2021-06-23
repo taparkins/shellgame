@@ -1,9 +1,5 @@
 import { BuildSyscaller } from './syscalls';
-
-export const MEM_CONFIGS = {
-    initial: 1,
-    maximum: 10,
-};
+import { ProcessMemory } from './memory';
 
 const PROC_STATES = {
     NOT_STARTED: 0,
@@ -11,7 +7,6 @@ const PROC_STATES = {
     TERMINATED: 2,
 }
 
-const PAGE_SIZE = 65532;
 
 export class Process {
     constructor(os, pid, executable, args) {
@@ -19,8 +14,9 @@ export class Process {
         this.pid = pid;
         this.endListener = undefined;
         this.state = PROC_STATES.NOT_STARTED;
+        this.memory = new ProcessMemory();
+        this._setupMemory(executable, args);
 
-        this.useableMemoryPtr = this._setupMemory(executable, args);
         let importModule = this._buildImportModule();
 
         this.modulePromise = WebAssembly.instantiate(
@@ -56,43 +52,20 @@ export class Process {
     }
 
     _setupMemory(executable, args) {
+        // Setup regions 0 and 1 (null-ptr and dataSegments)
+        let staticRegionPtr = this.memory.alloc(executable.dataRegion.byteLength + executable.dataRegionOffset);
+        this.memory.memcopy_safe(executable.dataRegion, staticRegionPtr + executable.dataRegionOffset);
+
+        // Setup region 2 (args)
         this.argc = args.length;
-        this.memory = new WebAssembly.Memory(MEM_CONFIGS);
-
-
         let encoder = new TextEncoder();
-        let argBufs = [];
-        let requiredByteCount = executable.argRegionOffset;
+        let argsBuf = new Uint8Array(0);
         for (var i = 0; i < args.length; i++) {
-            let argbuf = encoder.encode(args[i]);
-            argBufs.push(argBuf);
-            requiredByteCount += argBuf.byteLength + 1; // +1 to account for \0 byte for string termination
+            let argBuf = encoder.encode(args[i] + '\0');
+            argsBuf = new Uint8Array([...argsBuf, ...argBuf]);
         }
-
-        let requiredPages = Math.floor(requiredByteCount / PAGE_SIZE);
-        if (requiredPages >= MEM_CONFIGS.maximum) {
-            // TODO: better error handling?
-            throw "Insufficient memory for arguments provided to process (" + this.pid + ")";
-        } else if (requiredPages > 1) {
-            this.memory.grow(argPages - 1);
-        }
-
-        let curByteAddr = executable.dataRegionOffset;
-        let memoryBuf = new Uint8Array(this.memory.buffer);
-
-        for (var i = 0; i < executable.dataRegion.byteLength; i++) {
-            memoryBuf[curByteAddr++] = executable.dataRegion[i];
-        }
-
-        for (var i = 0; i < argBufs.length; i++) {
-            let argBuf = argBufs[i];
-            for (var j = 0; j < argBuf.byteLength; j++) {
-                memoryBuf[curByteAddr++] = argBuf[j];
-            }
-            memoryBuf[curByteAddr++] = 0; // explicitly setting zero shouldn't be needed, but just to be safe
-        }
-
-        return curByteAddr;
+        let argsRegionPtr = this.memory.alloc(argsBuf.byteLength);
+        this.memory.memcopy_safe(argsBuf, argsRegionPtr);
     }
 
     _buildImportModule() {
@@ -101,7 +74,7 @@ export class Process {
                 pid: this.pid,
             },
             os: {
-                process_space: this.memory,
+                process_space: this.memory.wasmMemory,
             },
             syscalls: this.os.syscaller.exportModule,
         };
