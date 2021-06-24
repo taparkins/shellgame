@@ -251,8 +251,8 @@ const atoi = {
     globals: ['pid'],
     syscalls: ['trap'],
     data: {
-        '#ATOI_ERR_MSG_1': "atoi: Cannot convert empty string to integer",
-        '#ATOI_ERR_MSG_2': "atoi: Invalid character while parsing string to integer",
+        '#ATOI_ERR_MSG_1': new TextEncoder().encode("atoi: Cannot convert empty string to integer\0"),
+        '#ATOI_ERR_MSG_2': new TextEncoder().encode("atoi: Invalid character while parsing string to integer\0"),
     },
 }
 

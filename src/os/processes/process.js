@@ -19,15 +19,21 @@ export class Process {
 
         let importModule = this._buildImportModule();
 
-        this.modulePromise = WebAssembly.instantiate(
-            executable.byteCode,
-            importModule
-        );
+        this.module = new WebAssembly.Module(executable.byteCode);
+        this.instance = new WebAssembly.Instance(this.module, importModule);
     }
 
     start() {
-        this.modulePromise = this.modulePromise
-            .then(this._onInstantiated.bind(this));
+        if (this.instance.exports.main === undefined) {
+            this.end();
+        }
+
+        // TODO: background processes?
+        this.state = PROC_STATES.RUNNING;
+        let result = this.instance.exports.main(this.useableMemoryPtr, this.argc);
+        // TODO: this is just for testing purposes. Ultimately print needs to move into binaries
+        this.os.print(0, result.toString());
+        this.end();
     }
 
     setEndListener(callback) {
@@ -35,20 +41,6 @@ export class Process {
         if (this.state == PROC_STATES.TERMINATED) {
             this.endListener(this);
         }
-    }
-
-    _onInstantiated(module) {
-        this.module = module;
-        if (module.instance.exports.main === undefined) {
-            this.end();
-        }
-
-        // TODO: background processes?
-        this.state = PROC_STATES.RUNNING;
-        let result = module.instance.exports.main(this.useableMemoryPtr, this.argc);
-        // TODO: this is just for testing purposes. Ultimately print needs to move into binaries
-        this.os.print(0, result.toString());
-        this.end();
     }
 
     _setupMemory(executable, args) {
