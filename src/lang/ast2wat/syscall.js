@@ -21,7 +21,7 @@ function convertSyscall(syscallName, args, context) {
     return new WasmNode([
         new WasmNode('call'),
         new WasmNode('$' + syscallName),
-        ...args.map((arg) => convertNode(arg, context)),
+        ...args,
     ], resultType);
 }
 

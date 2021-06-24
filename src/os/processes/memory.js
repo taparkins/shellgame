@@ -33,6 +33,11 @@ export class ProcessMemory {
     }
 
     alloc(byteLength) {
+        // You are not allowed to alloc for a non-positive range
+        if (byteLength <= 0) {
+            throw 'Invalid alloc request -- byteCount: ' + byteCount;
+        }
+
         // Look for freed fragment that would fit allocation
         for (var i = 0; i < this.heap.length - 1; i++) {
             let leftAlloc = this.heap[i];

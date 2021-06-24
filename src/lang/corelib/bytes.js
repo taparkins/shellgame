@@ -9,6 +9,7 @@ const countBytes = {
         new WasmNode(['local', '$curptr', 'i32']),
         new WasmNode(['local', '$curval', 'i32']),
 
+        new WasmNode([ 'local.set', '$curptr', new WasmNode([ 'local.get', '$strptr' ]) ]),
         new WasmNode([
             'block', '$break',
             new WasmNode([
@@ -123,6 +124,56 @@ const countBytes = {
     ]),
 };
 
+const shiftBytesLeft = {
+    node: new WasmNode([
+        'func',
+        '$shiftBytesLeft',
+        new WasmNode([ 'param', '$ptr', 'i32' ]),
+        new WasmNode([ 'param', '$shift', 'i32' ]),
+        new WasmNode([ 'param', '$byteCnt', 'i32' ]),
+
+        new WasmNode([ 'block', '$break',
+            new WasmNode([ 'loop', '$l1',
+                new WasmNode([ 'br_if', '$break',
+                    new WasmNode([ 'i32.le_s',
+                        new WasmNode([ 'local.get', '$byteCnt' ]),
+                        new WasmNode([ 'i32.const', '0' ]),
+                    ]),
+                ]),
+
+                new WasmNode([ 'i32.store8',
+                    new WasmNode(['i32.sub',
+                        new WasmNode([ 'local.get', '$ptr' ]),
+                        new WasmNode([ 'local.get', '$shift' ]),
+                    ]),
+                    new WasmNode([ 'i32.load8_u', new WasmNode([ 'local.get', '$ptr' ])]),
+                ]),
+
+                new WasmNode([ 'i32.store8',
+                    new WasmNode([ 'local.get', '$ptr' ]),
+                    new WasmNode([ 'i32.const', '0' ]),
+                ]),
+
+                new WasmNode([ 'local.set', '$byteCnt',
+                    new WasmNode([ 'i32.sub',
+                        new WasmNode([ 'local.get', '$byteCnt' ]),
+                        new WasmNode([ 'i32.const', '1' ]),
+                    ]),
+                ]),
+                new WasmNode([ 'local.set', '$ptr',
+                    new WasmNode([ 'i32.add',
+                        new WasmNode([ 'local.get', '$ptr' ]),
+                        new WasmNode([ 'i32.const', '1' ]),
+                    ]),
+                ]),
+
+                new WasmNode([ 'br', '$l1' ]),
+            ]),
+        ]),
+    ]),
+};
+
 export {
     countBytes,
+    shiftBytesLeft,
 }

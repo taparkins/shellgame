@@ -222,10 +222,10 @@ function _convertVarAccess(ast, context) {
         0, // null terminate the string
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
-    return convertSyscall('getenv', [
-        { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
-        { type: NODE_TYPES.NUMBER, value: varNamePtr },
-    ], context);
+
+    let pidArg = convertNode({ type: NODE_TYPES.GLOBAL_GET, name: 'pid' }, context);
+    let nameArg = convertNode({ type: NODE_TYPES.NUMBER, value: varNamePtr }, context);
+    return convertSyscall('getenv', [ pidArg, nameArg ], context);
 }
 
 function _convertVarAssign(ast, context) {
@@ -235,11 +235,21 @@ function _convertVarAssign(ast, context) {
         0, // null terminate the string
     ]);
     let varNamePtr = context.addDataItem(dataSegment);
-    return convertSyscall('setenv', [
-        { type: NODE_TYPES.GLOBAL_GET, name: 'pid' },
-        { type: NODE_TYPES.NUMBER, value: varNamePtr },
-        ast.value,
-    ], context);
+
+
+    let valueArg = convertNode(ast.value, context);
+    if (valueArg.returnType !== '*u8') {
+        context.addCorelibDependency('itoa');
+        // TODO: handle free-ing this once the syscall is done
+        valueArg = new WasmNode([
+            'call', '$itoa',
+            valueArg,
+        ], '*u8');
+    }
+
+    let pidArg = convertNode({ type: NODE_TYPES.GLOBAL_GET, name: 'pid' }, context);
+    let nameArg = convertNode({ type: NODE_TYPES.NUMBER, value: varNamePtr }, context);
+    return convertSyscall('setenv', [ pidArg, nameArg, valueArg ], context);
 }
 
 function _convertWhile(ast, context) {

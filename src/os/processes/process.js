@@ -64,8 +64,12 @@ export class Process {
             let argBuf = encoder.encode(args[i] + '\0');
             argsBuf = new Uint8Array([...argsBuf, ...argBuf]);
         }
-        let argsRegionPtr = this.memory.alloc(argsBuf.byteLength);
-        this.memory.memcopy_safe(argsBuf, argsRegionPtr);
+
+        let argsRegionPtr = null;
+        if (argsBuf.byteLength > 0) {
+            this.memory.alloc(argsBuf.byteLength);
+            this.memory.memcopy_safe(argsBuf, argsRegionPtr);
+        }
     }
 
     _buildImportModule() {

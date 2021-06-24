@@ -118,9 +118,7 @@ export class Syscaller {
             value = "";
         }
 
-        // TODO: I need a malloc to do this properly.
-        let saveBuf = 0x00;
-        writeStr(process.memory, saveBuf, value);
+        let saveBuf = writeStr(process.memory, value);
         return saveBuf;
     }
 

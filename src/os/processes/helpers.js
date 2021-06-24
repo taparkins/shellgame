@@ -9,10 +9,12 @@ function loadStr(memory, ptr) {
     return decoder.decode(strBytes);
 }
 
-function writeStr(memory, buf, str) {
+function writeStr(memory, str) {
     let encoder = new TextEncoder();
     let bytes  = encoder.encode(str + '\0');
+    let buf = memory.alloc(bytes.byteLength);
     memory.memcopy_safe(bytes, buf);
+    return buf;
 }
 
 export {
