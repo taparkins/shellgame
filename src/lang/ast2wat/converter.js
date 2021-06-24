@@ -280,7 +280,7 @@ function _convertWhile(ast, context) {
         bodyNodes.push(curLineNode);
     }
 
-    if (resultNode.returnType !== undefined) {
+    if (resultNode.returnType !== undefined && resultNode.returnType !== null) {
         resultNode.children.push(new WasmNode([
             'result',
             TYPE_MAPPINGS[resultNode.returnType],
