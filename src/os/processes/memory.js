@@ -47,7 +47,7 @@ export class ProcessMemory {
             let rightBoundary = rightAlloc.ptr;
             let freeLength = rightBoundary - leftBoundary;
 
-            if (freeLength <= byteLength) {
+            if (freeLength >= byteLength) {
                 this.heap.splice(i, 0, { ptr: leftBoundary, length: byteLength });
                 return leftBoundary;
             }
