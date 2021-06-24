@@ -54,7 +54,6 @@ function convertNode(ast, context) {
 }
 
 function _convertBool(ast, context) {
-    context.topLevelReturnType = 'i32';
     return new WasmNode([
         new WasmNode('i32.const'),
         new WasmNode(ast.value ? '1' : '0'),
@@ -121,7 +120,6 @@ function _convertGlobalGet(ast, context) {
 }
 
 function _convertNumber(ast, context) {
-    context.topLevelReturnType = 'i32';
     return new WasmNode([
         new WasmNode('i32.const'),
         new WasmNode(ast.value.toString()),
@@ -129,20 +127,22 @@ function _convertNumber(ast, context) {
 }
 
 function _convertOperator(ast, context) {
-    context.topLevelReturnType = 'i32';
+    let convertedOperands = ast.operands
+        .map((op) => _convertOperand(op, context));
+
     switch (ast.operator) {
         case OPERATORS.ADD:
             return new WasmNode([
                 new WasmNode('i32.add'),
-                convertNode(ast.operands[0], context),
-                convertNode(ast.operands[1], context),
+                convertedOperands[0],
+                convertedOperands[1],
             ], 'i32');
 
         case OPERATORS.DIVIDE:
             return new WasmNode([
                 new WasmNode('i32.div_s'),
-                convertNode(ast.operands[0], context),
-                convertNode(ast.operands[1], context),
+                convertedOperands[0],
+                convertedOperands[1],
             ], 'i32');
 
         case OPERATORS.EQUAL:
@@ -150,16 +150,16 @@ function _convertOperator(ast, context) {
                 new WasmNode('i32.eqz'),
                 new WasmNode([
                     new WasmNode('i32.sub'),
-                    convertNode(ast.operands[0], context),
-                    convertNode(ast.operands[1], context),
+                    convertedOperands[0],
+                    convertedOperands[1],
                 ], 'i32'),
             ], 'i32');
 
         case OPERATORS.MULTIPLY:
             return new WasmNode([
                 new WasmNode('i32.mul'),
-                convertNode(ast.operands[0], context),
-                convertNode(ast.operands[1], context),
+                convertedOperands[0],
+                convertedOperands[1],
             ], 'i32');
 
         case OPERATORS.NOT_EQUAL:
@@ -169,8 +169,8 @@ function _convertOperator(ast, context) {
                     new WasmNode('i32.eqz'),
                     new WasmNode([
                         new WasmNode('i32.sub'),
-                        convertNode(ast.operands[0], context),
-                        convertNode(ast.operands[1], context),
+                        convertedOperands[0],
+                        convertedOperands[1],
                     ], 'i32'),
                 ], 'i32'),
             ], 'i32');
@@ -178,14 +178,14 @@ function _convertOperator(ast, context) {
         case OPERATORS.SUBTRACT:
             return new WasmNode([
                 new WasmNode('i32.sub'),
-                convertNode(ast.operands[0], context),
-                convertNode(ast.operands[1], context),
+                convertedOperands[0],
+                convertedOperands[1],
             ], 'i32');
 
         case OPERATORS.UNARY_NOT:
             return new WasmNode([
                 new WasmNode('i32.eqz'),
-                convertNode(ast.operands[0], context),
+                convertedOperands[0],
             ], 'i32');
 
         case OPERATORS.UNARY_NEGATE:
@@ -195,9 +195,20 @@ function _convertOperator(ast, context) {
                     new WasmNode('i32.const'),
                     new WasmNode('-1'),
                 ], 'i32'),
-                convertNode(ast.operands[0], context),
+                convertedOperands[0],
             ], 'i32');
     }
+}
+
+function _convertOperand(ast, context) {
+    let converted = convertNode(ast, context);
+    if (converted.returnType === '*u8') {
+        context.addCorelibDependency('atoi');
+        return new WasmNode([ 'call', '$atoi', converted ], 'i32');
+    } else if (TYPE_MAPPINGS[converted.returnType] !== 'i32') {
+        throw "Invalid node! Cannot perform operation with node of type " + converted.returnType;
+    }
+    return converted;
 }
 
 function _convertString(ast, context) {

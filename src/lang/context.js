@@ -12,18 +12,22 @@ export class CompilationContext {
 
         this.dataRegion = new Uint8Array([ ]);
         this.dataSegmentPtrs = {};
+        this.namedDataSegments = {};
         this._maxBranchIdentifier = 0;
     }
 
-    addDataItem(dataSegment) {
-        if (this.dataSegmentPtrs[dataSegment] !== undefined) {
-            return this.dataSegmentPtrs[dataSegment];
+    addDataItem(dataSegment, name) {
+        if (this.dataSegmentPtrs[dataSegment] === undefined) {
+            let newPtr = this.dataRegion.length + REGION_1_START;
+            this.dataSegmentPtrs[dataSegment] = newPtr;
+            this.dataRegion = new Uint8Array([ ...this.dataRegion, ...dataSegment ]);
         }
 
-        let newPtr = this.dataRegion.length + REGION_1_START;
-        this.dataSegmentPtrs[dataSegment] = newPtr;
-        this.dataRegion = new Uint8Array([ ...this.dataRegion, ...dataSegment ]);
-        return newPtr;
+        let dataPtr = this.dataSegmentPtrs[dataSegment];
+        if (name !== undefined) {
+            this.namedDataSegments[name] = dataPtr;
+        }
+        return dataPtr;
     }
 
     addGlobalDependency(globalName) {
@@ -51,6 +55,15 @@ export class CompilationContext {
         if (!!funcDesc.syscalls) {
             for (var i = 0; i < funcDesc.syscalls.length; i++) {
                 this.addSyscallDependency(funcDesc.syscalls[i]);
+            }
+        }
+
+        if (!!funcDesc.data) {
+            let dataNames = Object.keys(funcDesc.data);
+            for (var i = 0; i < dataNames.length; i++) {
+                let dataName = dataNames[i];
+                let dataVal = funcDesc.data[dataName];
+                this.addDataItem(dataVal, dataName);
             }
         }
 
@@ -105,6 +118,13 @@ export class CompilationContext {
     getCorelibImportNodes() {
         return [...this.corelibs]
             .map((corelibName) => CORELIB_FUNCS[corelibName].node);
+    }
+
+    substituteDataValue(name) {
+        if (this.namedDataSegments[name] !== undefined) {
+            return this.namedDataSegments[name];
+        }
+        throw 'Unidentified substitution value: ' + name;
     }
 
     allocBranchIdentifier() {

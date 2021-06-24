@@ -10,6 +10,7 @@ export class Syscaller {
             free:   this.free.bind(this),
             getenv: this.getenv.bind(this),
             setenv: this.setenv.bind(this),
+            trap:   this.trap.bind(this),
         };
     }
 
@@ -133,5 +134,17 @@ export class Syscaller {
         let envName = loadStr(process.memory, envNamePtr);
         let value = loadStr(process.memory, strPtr);
         process.os.environment.variables[envName] = value;
+    }
+
+    // Signature: [ i32, *u8 ] -> EXCEPTION
+    // Details:
+    //   Throws an exception with a provided message.
+    //   Arg 0:  process ID
+    //   Arg 1:  Pointer to a \0-terminated string used as the message for the exception
+    //   Returns: Does not return, always throws an exception
+    trap(pid, msgPtr) {
+        let process = this.os.getProcByPID(pid);
+        let msg = loadStr(process.memory, msgPtr);
+        throw msg;
     }
 }

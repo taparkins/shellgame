@@ -9,6 +9,7 @@ const SYSCALL_SIGNATURES = {
     free:   { params: [ 'i32', '*u8' ], result: null },
     getenv: { params: [ 'i32', '*u8' ], result: '*u8' },
     setenv: { params: [ 'i32', '*u8', '*u8' ], result: null },
+    trap:   { params: [ 'i32', '*u8' ], result: null },
 }
 
 function convertSyscall(syscallName, args, context) {

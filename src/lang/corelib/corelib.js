@@ -1,12 +1,13 @@
 import { print } from './print'
 import { countBytes, shiftBytesLeft } from './bytes'
-import { itoa } from './itoa'
+import { itoa, atoi } from './strconv'
 
 const CORELIB_FUNCS = {
     print,
     countBytes,
     shiftBytesLeft,
     itoa,
+    atoi,
 };
 
 export {

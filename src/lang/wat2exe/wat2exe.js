@@ -1,3 +1,4 @@
+import { preprocess } from './preprocess';
 import { Executable } from '../../os/processes/executable';
 
 let WabtModule = null;
@@ -9,7 +10,8 @@ function wat2exe(wat, context) {
     // so perhaps during that process I can get rid of the async loading as well.
     while(WabtModule == null);
 
-    let wasmModule = WabtModule.parseWat('na.wat', wat.toString());
+    let processedWat = preprocess(wat, context);
+    let wasmModule = WabtModule.parseWat('na.wat', processedWat.toString());
     let byteCode = wasmModule.toBinary({}).buffer;
     return new Executable(byteCode, context.dataRegion);
 }
