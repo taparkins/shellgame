@@ -1,28 +1,44 @@
-.shellContainer {
-    width: 98vw;
-    height: 78vh;
-    background-color: black;
-    overflow: scroll;
-    position: relative;
+:root {
+    --cell-font-size: 20px;
+    --cell-font-width: calc(var(--cell-font-size) * 3.0 / 5.0);
+    --on-color: #1e1;
+    --off-color: #000;
 }
 
-.shellClickShield {
-    z-index: 10;
-    display: block;
+#container {
+    width: max(100%, calc(var(--cell-font-width) * 80));
+    padding: 10px;
+}
+
+#buffer1 {
+    z-index: 1;
+}
+
+#buffer2 {
+    z-index: 2;
+}
+
+.bufTableWrapper {
     position: absolute;
-    height: 100%;
     top: 0;
     left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0);
+    width: 100%;
+    
+    display: flex;
+    flex-direction: column;
+    align-content: center;
 }
 
-.shellLine {
-    background-color: black;
-    color: #11ee11;
+.bufTable {
+    font-size: 0;
+    border-collapse: collapse;
+    margin: auto;
+}
+
+.bufCell {
+    display: inline-block;
+    font-size: var(--cell-font-size);
+    color: var(--on-color);
     font-family: "Courier New";
-    border: none;
-    outline: none;
-    resize: none;
-    overflow: scroll;
+    padding: 0;
 }

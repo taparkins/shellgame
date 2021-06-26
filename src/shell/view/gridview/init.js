@@ -1,0 +1,4 @@
+
+function initBufferTable(tableElement, buffer) {
+
+}
