@@ -1,6 +1,7 @@
 import { compile } from '../lang/compiler'
 import { GridBuffer } from './model/buffer'
 import { GridViewManager } from './view/grid/gridmanager'
+import { KeyManager } from './keycontrol/manager'
 
 const INIT_BUFFER_WIDTH = 80;
 const INIT_BUFFER_HEIGHT = 30;
@@ -10,7 +11,7 @@ const INIT_VIEWPORT_WIDTH = INIT_BUFFER_WIDTH;
 const INIT_VIEWPORT_HEIGHT = INIT_BUFFER_HEIGHT;
 
 export class ShellEngine {
-    constructor(os, viewArgs) {
+    constructor(os, keyboardRegistrar, viewArgs) {
         this.os = os;
         this.stdoutRid = this.os.registerReader(0, this.readerCallback.bind(this));
         this.stderrRid = this.os.registerReader(1, this.readerCallback.bind(this));
@@ -24,7 +25,11 @@ export class ShellEngine {
             viewArgs.upperTableId,
         );
 
-        // TODO: setup event listeners to handle input and such
+        this.keyManager = new KeyManager(
+            keyboardRegistrar,
+            this.lowerGridBuffer,
+            this.upperGridBuffer,
+        );
     }
 
     handleLine(inLine) {
