@@ -1,53 +1,20 @@
 import { CONTROL_CODES } from './convertKey';
 
-const CURSOR_CHAR_BYTE = 0xB2;
-const CURSOR_META_BYTE = 0x00; // TODO
-
 const INITIAL_ACTION_PAUSE = 1000;
 const SUBSEQUENT_ACTION_PAUSE = 500;
 
 export class KeyManager {
-    constructor(registrar, lowerBuffer, upperBuffer) {
-        this.curPos = { x: 0, y: 0 };
+    constructor(registrar, shellState) {
         this.activeActionId = undefined;
         this.activeControlCodes = new Set();
 
-        this.lowerBuffer = lowerBuffer;
-        this.upperBuffer = upperBuffer;
+        this.shellState = shellState;
         this.registrar = registrar;
 
-        this.goToPosition(
-            this.upperBuffer.viewport.x,
-            this.upperBuffer.viewport.y,
-        );
         this.registrar.registerListeners(
             (keyAction) => _handleKeyDown(this, keyAction),
             (keyAction) => _handleKeyUp(this, keyAction),
         );
-    }
-
-    goToPosition(x, y) {
-        if (!this.upperBuffer.insideViewport(x, y)) {
-            // TODO: error flash?
-            return false;
-        }
-
-        this.upperBuffer.setValue(
-            this.curPos.x,
-            this.curPos.y,
-            0x00,
-            0x00,
-        );
-
-        this.curPos.x = x;
-        this.curPos.y = y;
-        this.upperBuffer.setValue(
-            this.curPos.x,
-            this.curPos.y,
-            CURSOR_CHAR_BYTE,
-            CURSOR_META_BYTE,
-        );
-        return true;
     }
 }
 
@@ -72,13 +39,15 @@ function _handleKeyUp(manager, keyAction) {
 }
 
 function _handlePrintableCharDown(manager, byteValue) {
-    // TODO
-    return false;
+    _initRepeatingAction(manager, () => {
+        manager.shellState.handlePrintableChar(byteValue);
+    });
+    return true;
 }
 
-function _handlePrintableCharUp(manager, byteValue) {
-    // TODO
-    return false;
+function _handlePrintableCharUp(manager, _) {
+    _disableRepeatingAction(manager);
+    return true;
 }
 
 function _handleControlCodeDown(manager, controlCode) {
@@ -97,40 +66,22 @@ function _handleControlCodeDown(manager, controlCode) {
             // TODO
             break;
         case CONTROL_CODES.ARROW_D:
-            actionFunc = () => manager.goToPosition(
-                manager.curPos.x,
-                manager.curPos.y + 1,
-            );
+            actionFunc = () => manager.shellState.handleArrowDown();
             break;
         case CONTROL_CODES.ARROW_U:
-           actionFunc =  () => manager.goToPosition(
-                manager.curPos.x,
-                manager.curPos.y - 1,
-            );
+            actionFunc = () => manager.shellState.handleArrowUp();
             break;
         case CONTROL_CODES.ARROW_L:
-            actionFunc = () => manager.goToPosition(
-                manager.curPos.x - 1,
-                manager.curPos.y,
-            );
+            actionFunc = () => manager.shellState.handleArrowLeft();
             break;
         case CONTROL_CODES.ARROW_R:
-            actionFunc = () => manager.goToPosition(
-                manager.curPos.x + 1,
-                manager.curPos.y,
-            );
+            actionFunc = () => manager.shellState.handleArrowRight();
             break;
         case CONTROL_CODES.END:
-            actionFunc = () => manager.goToPosition(
-                manager.upperBuffer.width, // TODO: smarter end computation
-                manager.curPos.y,
-            );
+            actionFunc = () => manager.shellState.handleEnd();
             break;
         case CONTROL_CODES.HOME:
-            actionFunc = () => manager.goToPosition(
-                0,
-                manager.curPos.y,
-            );
+            actionFunc = () => manager.shellState.handleHome();
             break;
         case CONTROL_CODES.PAGE_D:
             // TODO

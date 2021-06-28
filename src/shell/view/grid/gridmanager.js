@@ -1,35 +1,40 @@
 import { TableManager } from './tablemanager';
 
 export class GridViewManager {
-    constructor(lowerBuffer, upperBuffer, lowerTableId, upperTableId) {
-        _assertValidBuffers(lowerBuffer, upperBuffer);
+    constructor(shellState, lowerTableId, upperTableId) {
+        this.shellState = shellState;
 
-        this.lowerBuffer = lowerBuffer;
-        this.upperBuffer = upperBuffer;
-
+        let lowerViewport = this.shellState.lowerBuffer.viewport;
         this.lowerTableManager = new TableManager(
             lowerTableId,
-            lowerBuffer.viewport.width,
-            lowerBuffer.viewport.height,
+            lowerViewport.width,
+            lowerViewport.height,
         );
+        _initViewport(this.shellState.lowerBuffer, this.lowerTableManager);
+
+        let upperViewport = this.shellState.upperBuffer.viewport;
         this.upperTableManager = new TableManager(
             upperTableId,
-            upperBuffer.viewport.width,
-            upperBuffer.viewport.height,
+            upperViewport.width,
+            upperViewport.height,
         );
+        _initViewport(this.shellState.upperBuffer, this.upperTableManager);
 
-        _setupListeners(this.lowerBuffer, this.lowerTableManager);
-        _setupListeners(this.upperBuffer, this.upperTableManager);
+        _setupListeners(this.shellState.lowerBuffer, this.lowerTableManager);
+        _setupListeners(this.shellState.upperBuffer, this.upperTableManager);
     }
 }
 
-function _assertValidBuffers(lowerBuffer, upperBuffer) {
-    let diffWidth  = lowerBuffer.viewport.width  != upperBuffer.viewport.width;
-    let diffHeight = lowerBuffer.viewport.height != upperBuffer.viewport.height;
-    if (diffWidth || diffHeight) {
-        throw "GridBuffers for lower and upper layers must have the same size Viewport.\n" +
-            "\tLower dimenisons were: (" + lowerBuffer.viewport.width + ", " + lowerBuffer.viewport.height + ")\n" +
-            "\tUpper dimensions were: (" + upperBuffer.viewport.width + ", " + upperBuffer.viewport.height + ")";
+function _initViewport(gridBuffer, tableManager) {
+    let startX = gridBuffer.viewport.x;
+    let endX = gridBuffer.viewport.x + gridBuffer.viewport.width;
+    let startY = gridBuffer.viewport.y;
+    let endY = gridBuffer.viewport.y + gridBuffer.viewport.height;
+
+    for (var x = startX; x < endX; x++) {
+        for (var y = startY; y < endY; y++) {
+            tableManager.setCellValue(x, y, gridBuffer.getCharAt(x, y));
+        }
     }
 }
 

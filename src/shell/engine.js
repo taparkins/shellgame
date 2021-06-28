@@ -1,14 +1,10 @@
 import { compile } from '../lang/compiler'
-import { GridBuffer } from './model/buffer'
+import { ShellState } from './model/shellstate'
 import { GridViewManager } from './view/grid/gridmanager'
 import { KeyManager } from './keycontrol/manager'
 
-const INIT_BUFFER_WIDTH = 80;
-const INIT_BUFFER_HEIGHT = 30;
-const INIT_VIEWPORT_X = 0;
-const INIT_VIEWPORT_Y = 0;
-const INIT_VIEWPORT_WIDTH = INIT_BUFFER_WIDTH;
-const INIT_VIEWPORT_HEIGHT = INIT_BUFFER_HEIGHT;
+const INIT_SHELL_WIDTH = 80;
+const INIT_SHELL_HEIGHT = 30;
 
 export class ShellEngine {
     constructor(os, keyboardRegistrar, viewArgs) {
@@ -16,19 +12,19 @@ export class ShellEngine {
         this.stdoutRid = this.os.registerReader(0, this.readerCallback.bind(this));
         this.stderrRid = this.os.registerReader(1, this.readerCallback.bind(this));
 
-        this.lowerGridBuffer = _initGridBuffer();
-        this.upperGridBuffer = _initGridBuffer();
+        this.shellState = new ShellState({
+            width: INIT_SHELL_WIDTH,
+            height: INIT_SHELL_HEIGHT,
+        });
         this.view = new GridViewManager(
-            this.lowerGridBuffer,
-            this.upperGridBuffer,
+            this.shellState,
             viewArgs.lowerTableId,
             viewArgs.upperTableId,
         );
 
         this.keyManager = new KeyManager(
             keyboardRegistrar,
-            this.lowerGridBuffer,
-            this.upperGridBuffer,
+            this.shellState,
         );
     }
 
@@ -51,17 +47,4 @@ export class ShellEngine {
     readerCallback(msg) {
         this.view.addResponse(msg);
     }
-}
-
-function _initGridBuffer() {
-    let gridBuffer = new GridBuffer(
-        INIT_BUFFER_WIDTH,
-        INIT_BUFFER_HEIGHT,
-        INIT_VIEWPORT_WIDTH,
-        INIT_VIEWPORT_HEIGHT,
-    );
-    gridBuffer.viewport.x = INIT_VIEWPORT_X;
-    gridBuffer.viewport.y = INIT_VIEWPORT_Y;
-
-    return gridBuffer;
 }

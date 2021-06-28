@@ -14,22 +14,6 @@ function main() {
         upperTableId: UPPER_SHELL_TABLE_ID,
     };
     let shellEngine = new ShellEngine(os, keyboardRegistrar, viewArgs);
-
-    // Just a quick demo snippet to see some characters display
-    let x = 0;
-    let y = 0;
-    for (var i = 0; i < 256; i++) {
-        x = i % 80;
-        y = Math.floor(i / 80);
-        shellEngine.lowerGridBuffer.setValue(x, y, i, 0);
-    }
-
-    for (; y < 30; y++) {
-        for (; x < 80; x++) {
-            shellEngine.lowerGridBuffer.setValue(x, y, 15, 0);
-        }
-        x = 0;
-    }
 }
 
 
