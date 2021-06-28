@@ -5,9 +5,33 @@
     --off-color: #000;
 }
 
-#container {
+body {
+    margin: 0;
+}
+
+#pageContainer {
     width: max(100%, calc(var(--cell-font-width) * 80));
-    padding: 10px;
+    background: #333;
+}
+
+#pageAligner {
+    margin: auto;
+    padding: 15px;
+    padding-top: 40px;
+    display: flex;
+    flex-direction: column;
+}
+
+#shellWindow {
+    margin-left: auto;
+    margin-right: auto;
+    background: var(--off-color);
+    padding: 15px;
+    border-radius: 15px;
+}
+
+#bufWrapper {
+    position:relative;
 }
 
 #buffer1 {
@@ -16,13 +40,12 @@
 
 #buffer2 {
     z-index: 2;
+    position: absolute;
+    top: 0;
 }
 
 .bufTableWrapper {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    margin: 0px;
     
     display: flex;
     flex-direction: column;

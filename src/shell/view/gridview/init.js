@@ -1,4 +1,0 @@
-
-function initBufferTable(tableElement, buffer) {
-
-}

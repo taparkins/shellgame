@@ -1,12 +1,30 @@
-import { compile } from '../lang/compiler';
+import { compile } from '../lang/compiler'
+import { GridBuffer } from './model/buffer'
+import { GridViewManager } from './view/grid/gridmanager'
+
+const INIT_BUFFER_WIDTH = 80;
+const INIT_BUFFER_HEIGHT = 30;
+const INIT_VIEWPORT_X = 0;
+const INIT_VIEWPORT_Y = 0;
+const INIT_VIEWPORT_WIDTH = INIT_BUFFER_WIDTH;
+const INIT_VIEWPORT_HEIGHT = INIT_BUFFER_HEIGHT;
 
 export class ShellEngine {
-    constructor(os, view) {
+    constructor(os, viewArgs) {
         this.os = os;
-        this.view = view;
-        this.view.submitLineCallback = this.handleLine.bind(this);
         this.stdoutRid = this.os.registerReader(0, this.readerCallback.bind(this));
         this.stderrRid = this.os.registerReader(1, this.readerCallback.bind(this));
+
+        this.lowerGridBuffer = _initGridBuffer();
+        this.upperGridBuffer = _initGridBuffer();
+        this.view = new GridViewManager(
+            this.lowerGridBuffer,
+            this.upperGridBuffer,
+            viewArgs.lowerTableId,
+            viewArgs.upperTableId,
+        );
+
+        // TODO: setup event listeners to handle input and such
     }
 
     handleLine(inLine) {
@@ -28,4 +46,17 @@ export class ShellEngine {
     readerCallback(msg) {
         this.view.addResponse(msg);
     }
+}
+
+function _initGridBuffer() {
+    let gridBuffer = new GridBuffer(
+        INIT_BUFFER_WIDTH,
+        INIT_BUFFER_HEIGHT,
+        INIT_VIEWPORT_WIDTH,
+        INIT_VIEWPORT_HEIGHT,
+    );
+    gridBuffer.viewport.x = INIT_VIEWPORT_X;
+    gridBuffer.viewport.y = INIT_VIEWPORT_Y;
+
+    return gridBuffer;
 }

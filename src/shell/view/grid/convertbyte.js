@@ -172,7 +172,7 @@ function convertByte(byteValue) {
         case 0xFE: return '\u25A0';
         case 0xFF: return '\u00A0';
         default:
-            throw 'Invalid byte value: ' + [byteValue];
+            throw 'Invalid byte value: 0x' + byteValue.toString(16);
     }
 }
 

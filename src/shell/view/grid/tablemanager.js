@@ -4,10 +4,10 @@ const TABLE_CLASS = 'bufTable';
 const ROW_CLASS   = 'bufRow';
 const CELL_CLASS  = 'bufCell';
 
-export class TableManager() {
+export class TableManager {
     constructor(tableId, width, height) {
         this.table = document.getElementById(tableId);
-        if (!!this.table) {
+        if (!this.table) {
             throw "Invalid table id provided: " + tableId;
         }
 
@@ -22,12 +22,12 @@ export class TableManager() {
         //TODO: metadata
 
         let cellId = _getCellId(this.table, x, y);
-        let cell = this.table.getElementById(cellId);
-        if (!!this.cell) {
+        let cell = document.getElementById(cellId);
+        if (!cell) {
             throw 'Unable to find cell at index (' + x + ', ' + y + ')';
         }
 
-        this.cell.innerHTML = convertByte(byteValue);
+        cell.innerHTML = convertByte(byteValue);
     }
 }
 
@@ -47,7 +47,7 @@ function _initTable(table, width, height) {
             newRow.appendChild(newCell);
         }
 
-        this.table.appendChild(newRow);
+        table.appendChild(newRow);
     }
 }
 
