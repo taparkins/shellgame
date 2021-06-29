@@ -60,7 +60,7 @@ function _handleControlCodeDown(manager, controlCode) {
             return true;
 
         case CONTROL_CODES.ENTER:
-            // TODO
+            actionFunc = () => manager.shellState.handleEnter();
             break;
         case CONTROL_CODES.TAB:
             // TODO
@@ -90,10 +90,10 @@ function _handleControlCodeDown(manager, controlCode) {
             // TODO
             break;
         case CONTROL_CODES.BACKSPACE:
-            // TODO
+            actionFunc = () => manager.shellState.handleBackspace();
             break;
         case CONTROL_CODES.DELETE:
-            // TODO
+            actionFunc = () => manager.shellState.handleDelete();
             break;
         case CONTROL_CODES.INSERT:
             // TODO

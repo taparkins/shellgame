@@ -1,3 +1,8 @@
+const POSITION_TYPE = {
+    BUFFER: 'buffer',
+    VIEWPORT: 'viewport',
+}
+
 export class DataBuffer {
     constructor(width, height) {
         if (width <= 0 || height <= 0) {
@@ -5,21 +10,29 @@ export class DataBuffer {
         }
 
         this.buffer = [];
-        for (var x = 0; x < width; x++) {
-            this.buffer.push(new Uint8Array(height));
+        for (var y = 0; y < height; y++) {
+            this.buffer.push(new Uint8Array(width));
         }
     }
 
-    width() {
-        return this.buffer.length;
+    byteAt(x, y) {
+        return this.buffer[y][x];
     }
 
-    height() {
+    setByte(x, y, byteValue) {
+        this.buffer[y][x] = byteValue;
+    }
+
+    width() {
         return this.buffer[0].byteLength;
     }
 
+    height() {
+        return this.buffer.length;
+    }
+
     addRow() {
-        this.buffer.push(new Uint8Array(this.height()));
+        this.buffer.push(new Uint8Array(this.width()));
     }
 }
 
@@ -53,14 +66,35 @@ export class GridBuffer {
         };
     }
 
-    getCharAt(x, y) {
+    getDataAt(position) {
+        let { x, y } = _convertPositionToBuf(position, this);
         _validateIndex(x, y, this);
-        return this.charBuffer.buffer[x][y];
+        return {
+            charValue: this.charBuffer.byteAt(x, y),
+            metaValue: this.metaBuffer.byteAt(x, y),
+        };
     }
 
-    getMetaAt(x, y) {
-        _validateIndex(x, y, this);
-        return this.metaBuffer.buffer[x][y];
+    getDataBetween(position1, position2) {
+        let convertedPos1 = _convertPositionToBuf(position1, this);
+        let x1 = convertedPos1.x;
+        let y1 = convertedPos1.y;
+
+        let convertedPos2 = _convertPositionToBuf(position2, this);
+        let x2 = convertedPos2.x;
+        let y2 = convertedPos2.y;
+
+        _validateIndex(x1, y1, this);
+        _validateIndex(x2, y2, this);
+
+        let charData = [];
+        let metaData = [];
+        for (var curY = y1; curY < y2 + 1; curY++) {
+            charData.push(this.charBuffer.buffer[curY].slice(x1, x2 + 1));
+            metaData.push(this.metaBuffer.buffer[curY].slice(x1, x2 + 1));
+        }
+
+        return { charData, metaData };
     }
 
     bufferWidth() {
@@ -81,38 +115,55 @@ export class GridBuffer {
         this.listeners[type].push(callback);
     }
 
-    insideViewport(x, y) {
+    insideViewport(position) {
+        let { x, y } = _convertPositionToViewport(position, this);
         return this.viewport.x <= x && this.viewport.width > x &&
                this.viewport.y <= y && this.viewport.height > y;
     }
 
-    setValue(x, y, charData, metaData) {
-        _validateIndex(x, y, this);
+    setValue(position, charData, metaData) {
+        let bufPosition = _convertPositionToBuf(position, this);
+        let viewPosition = _convertPositionToViewport(position, this);
+        _validateIndex(bufPosition.x, bufPosition.y, this);
 
-        this.charBuffer.buffer[x][y] = charData;
-        this.metaBuffer.buffer[x][y] = metaData;
+        this.charBuffer.setByte(bufPosition.x, bufPosition.y, charData);
+        this.metaBuffer.setByte(bufPosition.x, bufPosition.y, metaData);
 
-        let insideViewport = this.insideViewport(x, y);
-        _triggerListeners(this.listeners.onSetValue, this, { x, y, charData, metaData, insideViewport });
+        let insideViewport = this.insideViewport(position);
+        _triggerListeners(
+            this.listeners.onSetValue,
+            this,
+            {
+                charData,
+                metaData,
+                insideViewport,
+                bufferPosition: bufPosition,
+                viewportPosition: viewPosition,
+            });
     }
 
     shiftViewport(dx, dy) {
+        if (dx == 0 && dy == 0) {
+            // We do not want to trigger listeners on a zero shift
+            return;
+        }
+
         let newTop = this.viewport.y + dy;
         let newBottom = newTop + this.viewport.height;
-        if (newTop < 0 || newBottom > this.charBuffer.height()) {
+        if (newTop < 0 || newBottom > this.bufferHeight()) {
             throw "Invalid viewport translation; attempt to translate viewport out of valid indices.";
         }
 
         let newLeft = this.viewport.x + dx;
         let newRight = newLeft + this.viewport.width;
-        if (newLeft < 0 || newRight > this.charBuffer.width()) {
+        if (newLeft < 0 || newRight > this.bufferWidth()) {
             throw "Invalid viewport translation; attempt to translate viewport out of valid indices.";
         }
 
-        this.viewport.x = newTop;
-        this.viewport.y = newBottom;
+        this.viewport.x = newLeft;
+        this.viewport.y = newTop;
 
-        _triggerListeners(this.listners.onShiftViewport, this, { dx, dy });
+        _triggerListeners(this.listeners.onShiftViewport, this, { dx, dy });
     }
 
     addBufferRow() {
@@ -132,4 +183,39 @@ function _validateIndex(x, y, gridBuffer) {
     if (x < 0 || x >= gridBuffer.bufferWidth() || y < 0 || y >= gridBuffer.bufferHeight()) {
         throw "Position out of range: (" + x + ", " + y + ")";
     }
+}
+
+function _convertPositionToBuf(position, gridBuffer) {
+    switch (position.type) {
+        case POSITION_TYPE.BUFFER:
+            return position;
+        case POSITION_TYPE.VIEWPORT:
+            return {
+                type: POSITION_TYPE.BUFFER,
+                x: position.x + gridBuffer.viewport.x,
+                y: position.y + gridBuffer.viewport.y,
+            };
+        default:
+            throw 'Invalid position type: ' + position.type;
+    }
+}
+
+function _convertPositionToViewport(position, gridBuffer) {
+    switch (position.type) {
+        case POSITION_TYPE.VIEWPORT:
+            return position;
+        case POSITION_TYPE.BUFFER:
+            return {
+                type: POSITION_TYPE.VIEWPORT,
+                x: position.x - gridBuffer.viewport.x,
+                y: position.y - gridBuffer.viewport.y,
+            };
+        default:
+            throw 'Invalid position type: ' + position.type;
+    }
+}
+
+
+export {
+    POSITION_TYPE,
 }

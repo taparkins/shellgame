@@ -1,4 +1,5 @@
-import { TableManager } from './tablemanager';
+import { TableManager } from './tablemanager'
+import { POSITION_TYPE } from '../../model/buffer'
 
 export class GridViewManager {
     constructor(shellState, lowerTableId, upperTableId) {
@@ -26,14 +27,12 @@ export class GridViewManager {
 }
 
 function _initViewport(gridBuffer, tableManager) {
-    let startX = gridBuffer.viewport.x;
-    let endX = gridBuffer.viewport.x + gridBuffer.viewport.width;
-    let startY = gridBuffer.viewport.y;
-    let endY = gridBuffer.viewport.y + gridBuffer.viewport.height;
-
-    for (var x = startX; x < endX; x++) {
-        for (var y = startY; y < endY; y++) {
-            tableManager.setCellValue(x, y, gridBuffer.getCharAt(x, y));
+    for (var x = 0; x < gridBuffer.viewport.width; x++) {
+        for (var y = 0; y < gridBuffer.viewport.height; y++) {
+            let queryPos = { type: POSITION_TYPE.VIEWPORT, x, y };
+            let data = gridBuffer.getDataAt(queryPos);
+            // TODO: handle meta
+            tableManager.setCellValue(x, y, data.charValue);
         }
     }
 }
@@ -42,15 +41,13 @@ function _setupListeners(gridBuffer, tableManager) {
     // TODO: setup a way to clean these up?
     gridBuffer.addListener('onShiftViewport',
         (gridBuffer, args) => {
-            let lowX = gridBuffer.viewport.x;
-            let highX = gridBuffer.viewport.x + gridBuffer.viewport.width;
-            let lowY = gridBuffer.viewport.y;
-            let highY = gridBuffer.viewport.height;
-
-            for (var x = lowX; x < highX; x++) {
-                for (var y = lowY; y < highY; y++) {
+            for (var x = 0; x < gridBuffer.viewport.width; x++) {
+                for (var y = 0; y < gridBuffer.viewport.height; y++) {
+                    let queryPos = { type: POSITION_TYPE.VIEWPORT, x, y };
+                    let data = gridBuffer.getDataAt(queryPos);
                     // TODO: handle meta bytes
-                    tableManager.setCellValue(x, y, gridBuffer.getCharAt(x, y));
+
+                    tableManager.setCellValue(x, y, data.charValue);
                 }
             }
         },
@@ -58,8 +55,16 @@ function _setupListeners(gridBuffer, tableManager) {
 
     gridBuffer.addListener('onSetValue',
         (gridBuffer, args) => {
+            if (!args.insideViewport) {
+                return;
+            }
+
             // TODO: handle meta byte
-            tableManager.setCellValue(args.x, args.y, args.charData);
+            tableManager.setCellValue(
+                args.viewportPosition.x,
+                args.viewportPosition.y,
+                args.charData,
+            );
         },
     );
 }
