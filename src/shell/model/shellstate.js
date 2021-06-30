@@ -18,7 +18,9 @@ export class ShellState {
         };
         this.inputStart = 0;
         this.inputEnd = 0;
-        this.history = [];
+
+        this.history = [new Uint8Array([])];
+        this.historyIndex = 0;
 
         this.lowerBuffer = new GridBuffer(
             dimensions.width,
@@ -44,29 +46,36 @@ export class ShellState {
             return;
         }
 
-        let existingData = this.lowerBuffer.getDataAt(this.cursorPos);
+        _typeChar(this, byteValue);
 
-        // TODO: handle insert mode vs replace mode
-        this.lowerBuffer.setValue(
-            this.cursorPos,
-            byteValue,
-            0x00, // TODO: handle meta
-        );
-
-        if (existingData.charValue == 0x00) {
-            this.inputEnd++;
-        }
-
-        // TODO: handle line overflow
-        _moveCursorPosition(this, 1, 0);
+        this.historyIndex = this.history.length - 1;
+        this.history[this.historyIndex] = _readCurrentInput(this);
     }
 
     handleArrowUp() {
-        // TODO
+        if (this.historyIndex <= 0) {
+            // TODO: error flash?
+            return;
+        }
+
+        this.historyIndex--;
+        let historyInput = this.history[this.historyIndex];
+
+        _clearCurrentInput(this);
+        _typeInput(this, historyInput);
     }
 
     handleArrowDown() {
-        // TODO
+        if (this.historyIndex >= this.history.length - 1) {
+            // TODO: error flash?
+            return;
+        }
+
+        this.historyIndex++;
+        let historyInput = this.history[this.historyIndex];
+
+        _clearCurrentInput(this);
+        _typeInput(this, historyInput);
     }
 
     handleArrowRight() {
@@ -105,6 +114,9 @@ export class ShellState {
 
         _deleteChar(this, this.cursorPos.x-1);
         _moveCursorPosition(this, -1, 0);
+
+        this.historyIndex = this.history.length - 1;
+        this.history[this.historyIndex] = _readCurrentInput(this);
     }
 
     handleDelete() {
@@ -113,30 +125,23 @@ export class ShellState {
             return;
         }
         _deleteChar(this, this.cursorPos.x);
+
+        this.historyIndex = this.history.length - 1;
+        this.history[this.historyIndex] = _readCurrentInput(this);
     }
 
     handleEnter() {
-        // TODO: handle meta? I don't think those will come up for this use case, but worth thinking about
-        let inputByteRegion = this.lowerBuffer.getDataBetween(
-            {
-                type: POSITION_TYPE.VIEWPORT,
-                x: this.inputStart,
-                y: this.cursorPos.y,
-            },
-            {
-                type: POSITION_TYPE.VIEWPORT,
-                x: this.inputEnd - 1,
-                y: this.cursorPos.y,
-            }
-        ).charData;
-        let inputBytes = new Uint8Array(inputByteRegion.flatMap((byteLine) => [...byteLine]));
-        this.history.push(inputBytes);
-
+        let inputBytes = _readCurrentInput(this);
         let decoder = new TextDecoder();
         let inputString = decoder.decode(inputBytes);
         // TODO: send string off to be processed into a command
         console.log(inputString);
 
+        this.history[this.history.length - 1] = this.history[this.historyIndex];
+        if (this.history[this.history.length - 1].byteLength !== 0) {
+            this.history.push(new Uint8Array());
+        }
+        this.historyIndex = this.history.length - 1;
         _resetLine(this);
     }
 }
@@ -150,8 +155,8 @@ function _cursorPosToDataPos(shellState, cursorPos) {
 }
 
 function _writeInputLeader(shellState) {
-    shellState.handlePrintableChar(0x3E); // >
-    shellState.handlePrintableChar(0x20); // [space]
+    _typeChar(shellState, 0x3E); // >
+    _typeChar(shellState, 0x20); // [space]
     shellState.inputStart = 2;
     shellState.inputEnd = 2;
 }
@@ -220,6 +225,66 @@ function _deleteChar(shellState, cursorX) {
     shellState.lowerBuffer.setValue(clearOutPos, 0x00, 0x00);
 
     shellState.inputEnd--;
+}
+
+function _readCurrentInput(shellState) {
+        // TODO: handle meta? I don't think those will come up for this use case, but worth thinking about
+        let inputByteRegion = shellState.lowerBuffer.getDataBetween(
+            {
+                type: POSITION_TYPE.VIEWPORT,
+                x: shellState.inputStart,
+                y: shellState.cursorPos.y,
+            },
+            {
+                type: POSITION_TYPE.VIEWPORT,
+                x: shellState.inputEnd - 1,
+                y: shellState.cursorPos.y,
+            }
+        ).charData;
+        return new Uint8Array(inputByteRegion.flatMap((byteLine) => [...byteLine]));
+}
+
+function _clearCurrentInput(shellState) {
+    for (var x = shellState.inputStart; x < shellState.inputEnd; x++) {
+        let curPos = {
+            type: POSITION_TYPE.VIEWPORT,
+            x: x,
+            y: shellState.cursorPos.y,
+        };
+        shellState.lowerBuffer.setValue(curPos, 0x00, 0x00);
+    }
+
+    shellState.inputEnd = shellState.inputStart;
+    _moveCursorPosition(
+        shellState,
+        shellState.inputStart - shellState.cursorPos.x,
+        0,
+    );
+}
+
+function _typeChar(shellState, byteValue) {
+        let existingData = shellState.lowerBuffer.getDataAt(shellState.cursorPos);
+
+        // TODO: handle insert mode vs replace mode
+        shellState.lowerBuffer.setValue(
+            shellState.cursorPos,
+            byteValue,
+            0x00, // TODO: handle meta
+        );
+
+        if (existingData.charValue == 0x00) {
+            shellState.inputEnd++;
+        }
+
+        // TODO: handle line overflow
+        _moveCursorPosition(shellState, 1, 0);
+
+}
+
+function _typeInput(shellState, inputBytes) {
+    for (var i = 0; i < inputBytes.byteLength; i++) {
+        _typeChar(shellState, inputBytes[i]);
+    }
 }
 
 function _resetLine(shellState) {
