@@ -15,9 +15,9 @@ export class OS {
         this.environment = new OsEnvironment(this);
     }
 
-    print(channelId, msg) {
+    print(channelId, bytes) {
         let channel = this.tty.getChannelById(channelId);
-        channel.write(msg);
+        channel.write(bytes);
     }
 
     read(channelId, count) {

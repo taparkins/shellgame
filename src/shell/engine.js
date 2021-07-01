@@ -16,6 +16,8 @@ export class ShellEngine {
             width: INIT_SHELL_WIDTH,
             height: INIT_SHELL_HEIGHT,
         });
+        this.shellState.addHandleLineListener(this.handleLine.bind(this));
+
         this.view = new GridViewManager(
             this.shellState,
             viewArgs.lowerTableId,
@@ -28,23 +30,27 @@ export class ShellEngine {
         );
     }
 
-    handleLine(inLine) {
-        if (inLine === "") {
-            this.response = "";
-            return
+    handleLine(inputBytes) {
+        let decoder = new TextDecoder();
+        let inLine = decoder.decode(inputBytes);
+        this.shellState.goIdle();
+
+        if (inLine !== '') {
+            try {
+                let executable = compile(inLine);
+                this.os.processManager.exec(executable, []);
+            } catch (e) {
+                console.log(e);
+                let encoder = new TextEncoder();
+                let eBytes = encoder.encode(e.message || e);
+                this.os.print(1, eBytes);
+            }
         }
 
-        try {
-            let executable = compile(inLine);
-            this.os.processManager.exec(executable, []);
-        } catch (e) {
-            console.log(e);
-            this.os.print(1, e.message || e);
-            return;
-        }
+        this.shellState.activateInput();
     }
 
-    readerCallback(msg) {
-        this.view.addResponse(msg);
+    readerCallback(bytes) {
+        this.shellState.typeBytes(bytes);
     }
 }

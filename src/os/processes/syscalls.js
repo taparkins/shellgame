@@ -69,13 +69,11 @@ export class Syscaller {
     //     On failure: negative number (see "error codes" for meaning)
     write(pid, channelCode, byteAddr, byteLen) {
         let process = this.os.getProcByPID(pid);
-        let strBuffer = process.memory.wasmMemory.buffer.slice(byteAddr, byteAddr + byteLen);
+        let buffer = process.memory.wasmMemory.buffer.slice(byteAddr, byteAddr + byteLen);
+        let bytes = new Uint8Array(buffer);
 
-        let decoder = new TextDecoder();
-        let msg = decoder.decode(new Uint8Array(strBuffer));
-        // TODO: don't convert this to a string, just write a byte array to the channel
-        process.os.print(channelCode, msg);
-        return msg.length;
+        process.os.print(channelCode, bytes);
+        return bytes.byteLength;
     }
 
     // Signature: [ i32, i32 ] -> *u8

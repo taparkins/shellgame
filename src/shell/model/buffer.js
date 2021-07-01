@@ -90,8 +90,8 @@ export class GridBuffer {
         let charData = [];
         let metaData = [];
         for (var curY = y1; curY < y2 + 1; curY++) {
-            charData.push(this.charBuffer.buffer[curY].slice(x1, x2 + 1));
-            metaData.push(this.metaBuffer.buffer[curY].slice(x1, x2 + 1));
+            charData.push(this.charBuffer.buffer[curY].slice(x1, x2));
+            metaData.push(this.metaBuffer.buffer[curY].slice(x1, x2));
         }
 
         return { charData, metaData };

@@ -31,6 +31,12 @@ function _buildMain(astLines, context) {
 
     if (returnType === undefined || returnType === null) {
         body.push(new WasmNode([ 'i32.const', '0' ], 'i32'));
+    } else if (returnType === 'i32') {
+        context.addCorelibDependency('itoa');
+        context.addCorelibDependency('print');
+        body.push(new WasmNode([ 'call', '$itoa' ]));
+        body.push(new WasmNode([ 'call', '$print' ]));
+        body.push(new WasmNode([ 'i32.const', '0' ], 'i32'));
     } else if (returnType === '*u8') {
         context.addCorelibDependency('print');
         body.push(new WasmNode([ 'call', '$print' ]));

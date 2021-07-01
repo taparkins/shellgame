@@ -2,26 +2,26 @@ export class Channel {
     constructor(id, name) {
         this.id = id;
         this.name = name;
-        this.queue = "";
+        this.queue = new Uint8Array([]);
         this.readers = {};
     }
 
-    write(msg) {
+    write(bytes) {
         let wroteToReader = false;
 
         for (var rid in this.readers) {
-            this.readers[rid](msg);
+            this.readers[rid](bytes);
             wroteToReader = true;
         }
 
         if (!wroteToReader) {
-            this.queue += msg;
+            this.queue = new Uint8Array([...this.queue, ...bytes]);
         }
     }
 
     read(count) {
-        let readChunk = this.queue.substring(0, count);
-        this.queue = this.queue.substring(count);
+        let readChunk = this.queue.slice(0, count);
+        this.queue = this.queue.slice(count);
         return {
             data: readChunk,
             isMore: this.queue.length > 0,

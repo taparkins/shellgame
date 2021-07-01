@@ -20,7 +20,9 @@ function convertByte(byteValue) {
         case 0x07: return '\u2022';
         case 0x08: return '\u25D8';
         case 0x09: return '\u25CB';
-        case 0x0A: return '\u25D9';
+        // 0x0A _does_ have a printable value in PC437
+        // However, in standard ASCII this is used by the \n newline character, which is still useful
+        // case 0x0A: return '\u25D9';
         case 0x0B: return '\u2642';
         case 0x0C: return '\u2640';
         case 0x0D: return '\u266A';

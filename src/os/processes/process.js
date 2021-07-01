@@ -31,8 +31,6 @@ export class Process {
         // TODO: background processes?
         this.state = PROC_STATES.RUNNING;
         let result = this.instance.exports.main(this.useableMemoryPtr, this.argc);
-        // TODO: this is just for testing purposes. Ultimately print needs to move into binaries
-        this.os.print(0, result.toString());
         this.end();
     }
 
