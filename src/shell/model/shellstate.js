@@ -87,7 +87,7 @@ export class ShellState {
         let historyInput = this.history[this.historyIndex];
 
         _clearCurrentInput(this);
-        this.typeBytes(this, historyInput);
+        this.typeBytes(historyInput);
     }
 
     handleArrowDown() {
@@ -100,7 +100,7 @@ export class ShellState {
         let historyInput = this.history[this.historyIndex];
 
         _clearCurrentInput(this);
-        this.typeBytes(this, historyInput);
+        this.typeBytes(historyInput);
     }
 
     handleArrowRight() {
