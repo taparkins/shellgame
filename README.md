@@ -24,8 +24,6 @@ This represents a working prototype for a game engine for allowing a player to i
  - Colors and other effects for console UI output.
 
 ## Demo
-The current working version of this code can be found at: http://aricmakesgames.net/codegame/main.html
-
 As the shell language is still in development, and the filesystem has not yet been implemented, interactions right now are limited. Here is a simple run down of visible interactions:
 
  - Variables can be assigned to and referenced. All variables are case-sensitive, alpha-numeric names, prefixed by a `$`. For example:
